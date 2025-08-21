@@ -1,0 +1,9 @@
+services:
+  ff-admin-frontend:
+    image: fact-flow-admin-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ff-admin-frontend
+    ports:
+      - "3310:80"
