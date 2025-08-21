@@ -3,18 +3,29 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Building2, Shield } from "lucide-react";
+import { API } from "@/api/axiosInstance";
+import { tokenControl } from "@/utils/helpers";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Dummy login - just navigate to dashboard
-    navigate("/dashboard");
+    const { data } = await API.post("/auth/login", { email, password });
+    if (data && data?.data?.token) {
+      tokenControl("set", data.data.token);
+      navigate("/dashboard");
+    }
   };
 
   return (
@@ -29,7 +40,8 @@ const Login = () => {
           </div>
           <h1 className="text-4xl font-bold mb-4">Admin Panel</h1>
           <p className="text-xl opacity-90 mb-8">
-            Manage your business operations with our comprehensive admin dashboard
+            Manage your business operations with our comprehensive admin
+            dashboard
           </p>
           <div className="flex items-center justify-center gap-4 text-sm opacity-80">
             <div className="flex items-center gap-2">
