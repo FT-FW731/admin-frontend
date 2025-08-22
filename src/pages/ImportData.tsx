@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { API } from "@/api/axiosInstance";
+import { toast } from "@/hooks/use-toast";
 
 const mockImports = [
   {
@@ -86,7 +87,13 @@ const ImportData = () => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("type", selectedCategory);
-        await API.post("/records/upload", formData);
+        const { data, success } = await API.post("/records/upload", formData);
+        if (success) {
+          toast({
+            title: "Upload Successful",
+            description: `File ${data?.fileName} uploaded successfully. ${data?.insertedRecords} records inserted, ${data?.failedRecords} failed.`,
+          });
+        }
         clearInterval(interval);
         setUploadProgress(100);
         setTimeout(() => {
@@ -124,14 +131,14 @@ const ImportData = () => {
             Upload CSV/Excel files for bulk data import
           </p>
         </div>
-        <Badge variant="outline" className="px-3 py-1">
+        {/* <Badge variant="outline" className="px-3 py-1">
           <Upload className="w-3 h-3 mr-1" />
           Bulk Import
-        </Badge>
+        </Badge> */}
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-card-foreground">
@@ -195,7 +202,7 @@ const ImportData = () => {
             <p className="text-xs text-muted-foreground">Require attention</p>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Upload Section */}
       <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
@@ -279,7 +286,7 @@ const ImportData = () => {
             </h4>
             <ul className="text-xs text-muted-foreground space-y-1">
               <li>• Supported formats: CSV, Excel (.xlsx, .xls)</li>
-              <li>• Maximum file size: 10MB</li>
+              <li>• Maximum file size: 5MB</li>
               <li>
                 • Ensure proper column headers match the category requirements
               </li>
@@ -290,7 +297,7 @@ const ImportData = () => {
       </Card>
 
       {/* Import History */}
-      <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
+      {/* <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
         <CardHeader>
           <CardTitle className="text-card-foreground">Import History</CardTitle>
           <CardDescription>
@@ -391,7 +398,7 @@ const ImportData = () => {
             ))}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };
