@@ -67,6 +67,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { debounce } from "@/utils/helpers";
 
 const mockUsers = [
   {
@@ -149,8 +150,31 @@ const UsersRoles = () => {
   });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 1,
+    limit: 10,
+    hasNextPage: false,
+    hasPreviousPage: false,
+    nextPage: null,
+    previousPage: null,
+  });
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
-  const { data, isLoading, error, refetch } = useGetData("/auth/users");
+  useEffect(() => {
+    const handler = debounce(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400);
+    handler();
+    return () => {
+      handler.cancel && handler.cancel();
+    };
+  }, [searchTerm]);
+
+  const { data, isLoading, error, refetch } = useGetData(
+    `/auth/users?page=${pagination.currentPage}&limit=${pagination.limit}&search=${debouncedSearchTerm}`
+  );
 
   useEffect(() => {
     if (data) {
@@ -169,14 +193,17 @@ const UsersRoles = () => {
             ?.count || 0,
       });
       setUsers(data?.users);
+      if (data?.pagination) {
+        setPagination(data.pagination);
+      }
     }
   }, [data]);
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+      user.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      user.role.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -596,6 +623,56 @@ const UsersRoles = () => {
             </div>
           </div>
 
+          {/* Pagination Controls */}
+          <div className="flex justify-end items-center mb-2 space-x-2">
+            <Button
+              variant="outline"
+              disabled={!pagination.hasPreviousPage}
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  currentPage: pagination.previousPage ?? prev.currentPage,
+                }))
+              }
+            >
+              Prev
+            </Button>
+            <span className="text-sm">
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              disabled={!pagination.hasNextPage}
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  currentPage: pagination.nextPage ?? prev.currentPage,
+                }))
+              }
+            >
+              Next
+            </Button>
+            <Label htmlFor="limit" className="ml-4 mr-2 text-sm">
+              Rows:
+            </Label>
+            <select
+              id="limit"
+              value={pagination.limit}
+              onChange={(e) => {
+                setPagination((prev) => ({
+                  ...prev,
+                  limit: Number(e.target.value),
+                  currentPage: 1,
+                }));
+              }}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+            </select>
+          </div>
+
           <div className="rounded-md border border-border">
             <Table>
               <TableHeader>
@@ -607,7 +684,7 @@ const UsersRoles = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users?.length <= 0 ? (
+                {users?.length <= 0 && isLoading ? (
                   <TableSkeleton />
                 ) : (
                   filteredUsers.map((user) => (
