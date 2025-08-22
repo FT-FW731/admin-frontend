@@ -22,8 +22,8 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const { data } = await API.post("/auth/login", { email, password });
-    if (data && data?.data?.token) {
-      tokenControl("set", data.data.token);
+    if (data && data?.token) {
+      tokenControl("set", data.token);
       navigate("/dashboard");
     }
   };

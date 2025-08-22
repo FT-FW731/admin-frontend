@@ -27,12 +27,12 @@ function wrapWithAsyncHandler<T extends (...args: any[]) => Promise<any>>(
     const result = await asyncHandler(fn(...args));
     // If result is null, return an object with data: null for safe destructuring
     if (result === null) return { data: null };
-    return result;
+    return result?.data || result;
   };
 }
 
 export const API = {
-  get: wrapWithAsyncHandler((url, params) =>
+  get: wrapWithAsyncHandler((url, params?) =>
     axiosInstance.get(url, { params })
   ),
   post: wrapWithAsyncHandler((url, data) => axiosInstance.post(url, data)),
