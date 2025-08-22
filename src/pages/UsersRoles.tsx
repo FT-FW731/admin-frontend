@@ -686,6 +686,15 @@ const UsersRoles = () => {
               <TableBody>
                 {users?.length <= 0 && isLoading ? (
                   <TableSkeleton />
+                ) : users?.length <= 0 && !isLoading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-muted-foreground"
+                    >
+                      No users found.
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
