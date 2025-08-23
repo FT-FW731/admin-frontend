@@ -66,6 +66,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  statesAndCityGstSubscriptions,
+  gstMapping,
+  statesIecSubscriptions,
+  mcaRocAndCitySubscriptionsMapping,
+} from "@/utils/constants";
 
 // Mock client data
 const mockClients = [
@@ -202,6 +208,22 @@ const Clients = () => {
     subscriptionId: "",
   });
   const [subscriptionError, setSubscriptionError] = useState("");
+
+  const [subscriptionPlan, setSubscriptionPlan] = useState<any>(null);
+  const [subscriptionDropdowns, setSubscriptionDropdowns] = useState({
+    roc: "",
+    state: "",
+    city: "",
+  });
+
+  // Helper functions for dropdown options
+  const getRocOptions = () => Object.keys(mcaRocAndCitySubscriptionsMapping);
+  const getStateOptions = () => statesAndCityGstSubscriptions.state;
+  const getCityOptions = (selectedState: string) => {
+    const found = gstMapping.find((item) => item.name === selectedState);
+    return found ? found.children : [];
+  };
+  const getIecStateOptions = () => statesIecSubscriptions;
 
   // Fetch subscription plans on mount
   useEffect(() => {
@@ -397,17 +419,81 @@ const Clients = () => {
     setIsSubscriptionDialogOpen(true);
   };
 
-  // Handle subscription update
+  // Subscription dialog logic
+  useEffect(() => {
+    if (!subscriptionForm.subscriptionId) {
+      setSubscriptionPlan(null);
+      return;
+    }
+    const plan = subscriptions.find(
+      (sub: any) => String(sub.id) === String(subscriptionForm.subscriptionId)
+    );
+    setSubscriptionPlan(plan || null);
+    setSubscriptionDropdowns({ roc: "", state: "", city: "" });
+  }, [subscriptionForm.subscriptionId, subscriptions]);
+
+  // Handle dropdown changes
+  const handleDropdownChange = (field: string, value: string) => {
+    setSubscriptionDropdowns((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === "state" ? { city: "" } : {}), // reset city if state changes
+    }));
+  };
+
+  // Handle subscription update (API call)
   const handleUpdateSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subscriptionForm.subscriptionId) {
       setSubscriptionError("Subscription is required");
       return;
     }
+
+    // Prepare values array based on plan type/filterType
+    let values: string[] = [""];
+    if (subscriptionPlan) {
+      if (subscriptionPlan.filterType === "roc") {
+        values = [subscriptionDropdowns.roc];
+        if (!subscriptionDropdowns.roc) {
+          setSubscriptionError("Please select ROC");
+          return;
+        }
+      } else if (subscriptionPlan.filterType === "gstin") {
+        values = [subscriptionDropdowns.state];
+        if (!subscriptionDropdowns.state) {
+          setSubscriptionError("Please select State");
+          return;
+        }
+      } else if (subscriptionPlan.filterType === "address") {
+        if (subscriptionPlan.type === "gst") {
+          values = [subscriptionDropdowns.state, subscriptionDropdowns.city];
+          if (!subscriptionDropdowns.state || !subscriptionDropdowns.city) {
+            setSubscriptionError("Please select State and City");
+            return;
+          }
+        } else if (subscriptionPlan.type === "iec") {
+          values = [subscriptionDropdowns.state];
+          if (!subscriptionDropdowns.state) {
+            setSubscriptionError("Please select State");
+            return;
+          }
+        }
+      } else if (
+        subscriptionPlan.filterType === "city" &&
+        subscriptionPlan.type === "mca"
+      ) {
+        values = [subscriptionDropdowns.roc, subscriptionDropdowns.city];
+        if (!subscriptionDropdowns.roc || !subscriptionDropdowns.city) {
+          setSubscriptionError("Please select ROC and City");
+          return;
+        }
+      }
+    }
+
     const { success } = await API.post(`/subscriptions/initiate-order`, {
       subscriptionId: Number(subscriptionForm.subscriptionId),
       unit: 1,
-      values: [""],
+      values,
       userId: Number(subscriptionClient.userId),
     });
     if (success) {
@@ -1089,6 +1175,207 @@ const Clients = () => {
                   )}
                 </div>
               </div>
+
+              {/* Conditional dropdowns based on plan */}
+              {subscriptionPlan?.filterType === "roc" && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="roc" className="text-right">
+                    ROC
+                  </Label>
+                  <div className="col-span-3">
+                    <Select
+                      value={subscriptionDropdowns.roc}
+                      onValueChange={(value) =>
+                        handleDropdownChange("roc", value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ROC" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getRocOptions().map((roc) => (
+                          <SelectItem key={roc} value={roc}>
+                            {roc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {subscriptionPlan?.filterType === "gstin" && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="state" className="text-right">
+                    State
+                  </Label>
+                  <div className="col-span-3">
+                    <Select
+                      value={subscriptionDropdowns.state}
+                      onValueChange={(value) =>
+                        handleDropdownChange("state", value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select State" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getStateOptions().map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {subscriptionPlan?.filterType === "address" &&
+                subscriptionPlan?.type === "gst" && (
+                  <>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="state" className="text-right">
+                        State
+                      </Label>
+                      <div className="col-span-3">
+                        <Select
+                          value={subscriptionDropdowns.state}
+                          onValueChange={(value) =>
+                            handleDropdownChange("state", value)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select State" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getStateOptions().map((state) => (
+                              <SelectItem key={state} value={state}>
+                                {state}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {subscriptionDropdowns.state && (
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="city" className="text-right">
+                          City
+                        </Label>
+                        <div className="col-span-3">
+                          <Select
+                            value={subscriptionDropdowns.city}
+                            onValueChange={(value) =>
+                              handleDropdownChange("city", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select City" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getCityOptions(subscriptionDropdowns.state).map(
+                                (city) => (
+                                  <SelectItem key={city} value={city}>
+                                    {city}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+              {subscriptionPlan?.filterType === "address" &&
+                subscriptionPlan?.type === "iec" && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="state" className="text-right">
+                      State
+                    </Label>
+                    <div className="col-span-3">
+                      <Select
+                        value={subscriptionDropdowns.state}
+                        onValueChange={(value) =>
+                          handleDropdownChange("state", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select State" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getIecStateOptions().map((state) => (
+                            <SelectItem key={state} value={state}>
+                              {state}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+              {subscriptionPlan?.filterType === "city" &&
+                subscriptionPlan?.type === "mca" && (
+                  <>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="roc" className="text-right">
+                        ROC
+                      </Label>
+                      <div className="col-span-3">
+                        <Select
+                          value={subscriptionDropdowns.roc}
+                          onValueChange={(value) =>
+                            handleDropdownChange("roc", value)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select ROC" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getRocOptions().map((roc) => (
+                              <SelectItem key={roc} value={roc}>
+                                {roc}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {subscriptionDropdowns.roc && (
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="city" className="text-right">
+                          City
+                        </Label>
+                        <div className="col-span-3">
+                          <Select
+                            value={subscriptionDropdowns.city}
+                            onValueChange={(value) =>
+                              handleDropdownChange("city", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select City" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(
+                                mcaRocAndCitySubscriptionsMapping[
+                                  subscriptionDropdowns.roc
+                                ]?.cities || []
+                              ).map((city: string) => (
+                                <SelectItem key={city} value={city}>
+                                  {city}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
             </div>
             <div className="flex justify-end space-x-2">
               <Button
