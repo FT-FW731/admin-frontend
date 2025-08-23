@@ -59,6 +59,13 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Mock client data
 const mockClients = [
@@ -152,6 +159,7 @@ const Clients = () => {
     password: "",
     company: "",
     mobile: "",
+    subscriptionId: "",
   });
   const [createErrors, setCreateErrors] = useState({
     name: "",
@@ -159,6 +167,7 @@ const Clients = () => {
     password: "",
     company: "",
     mobile: "",
+    subscriptionId: "",
   });
 
   // Add state for update client dialog
@@ -169,15 +178,48 @@ const Clients = () => {
     email: "",
     company: "",
     mobile: "",
+    subscriptionId: "",
   });
   const [updateErrors, setUpdateErrors] = useState({
     name: "",
     email: "",
     company: "",
     mobile: "",
+    subscriptionId: "",
   });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);
+
+  // Subscription plans state
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptionsLoading, setSubscriptionsLoading] = useState(false);
+
+  // New state for subscription dialog
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] =
+    useState(false);
+  const [subscriptionClient, setSubscriptionClient] = useState<any>(null);
+  const [subscriptionForm, setSubscriptionForm] = useState({
+    subscriptionId: "",
+  });
+  const [subscriptionError, setSubscriptionError] = useState("");
+
+  // Fetch subscription plans on mount
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      setSubscriptionsLoading(true);
+      try {
+        const res = await API.get("/subscriptions");
+        if (res?.success && Array.isArray(res.data)) {
+          console.log("Fetched subscriptions:", res.data);
+          setSubscriptions(res.data);
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+      setSubscriptionsLoading(false);
+    };
+    fetchSubscriptions();
+  }, []);
 
   // Create client handler
   const handleCreateClient = async (e: React.FormEvent) => {
@@ -189,6 +231,7 @@ const Clients = () => {
       password: "",
       company: "",
       mobile: "",
+      subscriptionId: "",
     };
 
     if (!createFormData.name.trim()) {
@@ -220,6 +263,10 @@ const Clients = () => {
       newErrors.mobile = "Mobile is required and must be 10 digits";
       valid = false;
     }
+    if (!createFormData.subscriptionId) {
+      newErrors.subscriptionId = "Subscription is required";
+      valid = false;
+    }
 
     setCreateErrors(newErrors);
     if (!valid) return;
@@ -238,6 +285,7 @@ const Clients = () => {
         password: "",
         company: "",
         mobile: "",
+        subscriptionId: "",
       });
       refetch();
     }
@@ -251,8 +299,15 @@ const Clients = () => {
       email: client.email || "",
       company: client.company || "",
       mobile: client.mobile || "",
+      subscriptionId: client.subscriptionId || "",
     });
-    setUpdateErrors({ name: "", email: "", company: "", mobile: "" });
+    setUpdateErrors({
+      name: "",
+      email: "",
+      company: "",
+      mobile: "",
+      subscriptionId: "",
+    });
     setIsUpdateDialogOpen(true);
   };
 
@@ -260,7 +315,13 @@ const Clients = () => {
   const handleUpdateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     let valid = true;
-    const newErrors = { name: "", email: "", company: "", mobile: "" };
+    const newErrors = {
+      name: "",
+      email: "",
+      company: "",
+      mobile: "",
+      subscriptionId: "",
+    };
 
     if (!updateFormData.name.trim()) {
       newErrors.name = "Name is required";
@@ -282,6 +343,10 @@ const Clients = () => {
       !/^\d{10}$/.test(updateFormData.mobile)
     ) {
       newErrors.mobile = "Mobile is required and must be 10 digits";
+      valid = false;
+    }
+    if (!updateFormData.subscriptionId) {
+      newErrors.subscriptionId = "Subscription is required";
       valid = false;
     }
 
@@ -320,6 +385,39 @@ const Clients = () => {
       });
       setIsDeleteDialogOpen(false);
       setClientToDelete(null);
+      refetch();
+    }
+  };
+
+  // Open subscription dialog
+  const handleOpenSubscriptionDialog = (client: any) => {
+    setSubscriptionClient({ ...client, userId: client.id });
+    setSubscriptionForm({ subscriptionId: client.subscriptionId || "" });
+    setSubscriptionError("");
+    setIsSubscriptionDialogOpen(true);
+  };
+
+  // Handle subscription update
+  const handleUpdateSubscription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subscriptionForm.subscriptionId) {
+      setSubscriptionError("Subscription is required");
+      return;
+    }
+    const { success } = await API.post(`/subscriptions/initiate-order`, {
+      subscriptionId: Number(subscriptionForm.subscriptionId),
+      unit: 1,
+      values: [""],
+      userId: Number(subscriptionClient.userId),
+    });
+    if (success) {
+      toast({
+        title: "Subscription updated",
+        description: "The client's subscription plan has been updated.",
+        variant: "default",
+      });
+      setIsSubscriptionDialogOpen(false);
+      setSubscriptionClient(null);
       refetch();
     }
   };
@@ -471,6 +569,39 @@ const Clients = () => {
                     )}
                   </div>
                 </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="subscription" className="text-right">
+                    Subscription
+                  </Label>
+                  <div className="col-span-3">
+                    <Select
+                      value={createFormData.subscriptionId}
+                      onValueChange={(value) =>
+                        setCreateFormData({
+                          ...createFormData,
+                          subscriptionId: value,
+                        })
+                      }
+                      disabled={subscriptionsLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subscriptions.map((sub: any) => (
+                          <SelectItem key={sub.id} value={sub.id}>
+                            {sub.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {createErrors.subscriptionId && (
+                      <div className="text-xs text-destructive mt-1">
+                        {createErrors.subscriptionId}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button
@@ -591,6 +722,39 @@ const Clients = () => {
                     {updateErrors.mobile && (
                       <div className="text-xs text-destructive mt-1">
                         {updateErrors.mobile}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="update-subscription" className="text-right">
+                    Subscription
+                  </Label>
+                  <div className="col-span-3">
+                    <Select
+                      value={updateFormData.subscriptionId}
+                      onValueChange={(value) =>
+                        setUpdateFormData({
+                          ...updateFormData,
+                          subscriptionId: value,
+                        })
+                      }
+                      disabled={subscriptionsLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subscriptions.map((sub: any) => (
+                          <SelectItem key={sub.id} value={sub.id}>
+                            {sub.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {updateErrors.subscriptionId && (
+                      <div className="text-xs text-destructive mt-1">
+                        {updateErrors.subscriptionId}
                       </div>
                     )}
                   </div>
@@ -777,6 +941,7 @@ const Clients = () => {
                       company: string;
                       mobile: string;
                       credits: number;
+                      subscriptionId?: string;
                     }) => (
                       <TableRow key={client.id}>
                         <TableCell>
@@ -808,6 +973,14 @@ const Clients = () => {
                               >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Client
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleOpenSubscriptionDialog(client)
+                                }
+                              >
+                                <Key className="mr-2 h-4 w-4" />
+                                Add Plan
                               </DropdownMenuItem>
                               {/* <DropdownMenuItem>
                             <Key className="mr-2 h-4 w-4" />
@@ -863,6 +1036,78 @@ const Clients = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Subscription Dialog */}
+      <Dialog
+        open={isSubscriptionDialogOpen}
+        onOpenChange={setIsSubscriptionDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Subscription Plan</DialogTitle>
+            <DialogDescription>
+              Assign a subscription plan to this client.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateSubscription}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="subscription-plan" className="text-right">
+                  Subscription
+                </Label>
+                <div className="col-span-3">
+                  <Select
+                    value={String(subscriptionForm.subscriptionId)}
+                    onValueChange={(value) =>
+                      setSubscriptionForm({ subscriptionId: value })
+                    }
+                    disabled={subscriptionsLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          subscriptions.find(
+                            (sub: any) =>
+                              String(sub.id) ===
+                              String(subscriptionForm.subscriptionId)
+                          )?.name || "Select a plan"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subscriptions.map((sub: any) => (
+                        <SelectItem key={sub.id} value={String(sub.id)}>
+                          {sub.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {subscriptionError && (
+                    <div className="text-xs text-destructive mt-1">
+                      {subscriptionError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsSubscriptionDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="gradient-primary text-primary-foreground"
+                type="submit"
+              >
+                Add Plan
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
