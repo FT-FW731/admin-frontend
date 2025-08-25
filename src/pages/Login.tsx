@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,11 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const token = tokenControl("get");
+
+  useEffect(() => {
+    if (token) navigate("/dashboard");
+  }, [token, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +32,8 @@ const Login = () => {
       navigate("/dashboard");
     }
   };
+
+  if (token) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="min-h-screen flex">
