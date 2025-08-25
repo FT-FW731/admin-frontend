@@ -1,56 +1,178 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { 
-  Users, 
-  CreditCard, 
-  Database, 
-  TrendingUp, 
-  Building2, 
-  FileText, 
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  CreditCard,
+  Database,
+  Building2,
+  FileText,
   Plane,
   ArrowUpRight,
-  IndianRupee
-} from "lucide-react"
-import { 
-  ResponsiveContainer, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip,
-  BarChart,
-  Bar
-} from "recharts"
+  Edit,
+} from "lucide-react";
+import useGetData from "@/hooks/use-get-data";
+import { API } from "@/api/axiosInstance";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { formatNumber } from "@/utils/helpers";
+import CardSkeleton from "@/components/CardSkeleton";
 
-// Mock data for charts
-const clientTrendData = [
-  { month: "Jan", clients: 45 },
-  { month: "Feb", clients: 52 },
-  { month: "Mar", clients: 48 },
-  { month: "Apr", clients: 61 },
-  { month: "May", clients: 55 },
-  { month: "Jun", clients: 67 },
-]
+const EditRecordDialog = ({
+  isOpen,
+  setIsOpen,
+  editForm,
+  setEditForm,
+  selectedRecord,
+  handleSaveEdit,
+  updateLoading,
+}: {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  editForm: { recordName: string; recordValue: number };
+  setEditForm: (v: any) => void;
+  selectedRecord: any;
+  handleSaveEdit: () => Promise<void>;
+  updateLoading: boolean;
+}) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Record</DialogTitle>
+          <DialogDescription>
+            Update the record name or value and save changes.
+          </DialogDescription>
+        </DialogHeader>
 
-const paymentData = [
-  { month: "Jan", amount: 85000 },
-  { month: "Feb", amount: 95000 },
-  { month: "Mar", amount: 78000 },
-  { month: "Apr", amount: 125000 },
-  { month: "May", amount: 110000 },
-  { month: "Jun", amount: 135000 },
-]
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <div className="col-span-4">
+              <label className="text-sm mb-1 block">Record Name</label>
+              <Input
+                value={editForm.recordName.toUpperCase()}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, recordName: e.target.value })
+                }
+                disabled
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <div className="col-span-4">
+              <label className="text-sm mb-1 block">Record Value</label>
+              <Input
+                type="number"
+                value={String(editForm.recordValue ?? 0)}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    recordValue: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            className="gradient-primary text-primary-foreground"
+            onClick={handleSaveEdit}
+            loading={updateLoading}
+          >
+            Save
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Dashboard = () => {
+  const { data, isLoading, refetch } = useGetData("/miscellaneous/dashboard");
+  const records = data?.data ?? data ?? [];
+
+  const getIconByName = (name: string) => {
+    switch ((name || "").toLowerCase()) {
+      case "gst":
+        return <FileText className="h-4 w-4 text-chart-4" />;
+      case "cin":
+        return <Building2 className="h-4 w-4 text-chart-3" />;
+      case "din":
+        return <Database className="h-4 w-4 text-accent" />;
+      case "iec":
+        return <Plane className="h-4 w-4 text-primary" />;
+      case "pan":
+        return <CreditCard className="h-4 w-4 text-accent" />;
+      default:
+        return <ArrowUpRight className="h-4 w-4 text-primary" />;
+    }
+  };
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<null | any>(null);
+  const [editForm, setEditForm] = useState({
+    recordName: "",
+    recordValue: 0,
+  });
+
+  const openEdit = (rec: any) => {
+    setSelectedRecord(rec);
+    setEditForm({
+      recordName: rec.recordName ?? "",
+      recordValue: rec.recordValue ?? 0,
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setUpdateLoading(true);
+    if (!selectedRecord) {
+      setUpdateLoading(false);
+      return;
+    }
+    const payload = {
+      name: editForm.recordName,
+      value: Number(editForm.recordValue),
+    };
+    const { success } = await API.put(
+      `/miscellaneous/dashboard/${selectedRecord.id}`,
+      payload
+    );
+    if (success) {
+      toast({
+        title: "Record updated",
+        description: "The dashboard record was updated successfully.",
+        variant: "default",
+      });
+      setIsEditOpen(false);
+      setSelectedRecord(null);
+      refetch && refetch();
+    }
+    setUpdateLoading(false);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's your business overview.</p>
+          <p className="text-muted-foreground">
+            Welcome back! Here's your business overview.
+          </p>
         </div>
         <Badge variant="outline" className="px-3 py-1">
           Live Data
@@ -59,161 +181,66 @@ const Dashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">Total Clients</CardTitle>
-            <Users className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">1,284</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-accent font-medium">+12.5%</span> from last month
-            </p>
-          </CardContent>
-        </Card>
+        {records.length <= 0 && isLoading ? (
+          <CardSkeleton count={5} />
+        ) : !isLoading && records.length <= 0 ? (
+          <p className="text-center col-span-4 text-muted-foreground">
+            No records found.
+          </p>
+        ) : (
+          <React.Fragment>
+            {records.map(
+              (rec: {
+                id: string;
+                recordName: string;
+                recordValue: number;
+              }) => (
+                <Card
+                  className="shadow-card border-0 bg-card/50 backdrop-blur"
+                  key={rec.id}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-card-foreground">
+                      {rec.recordName ? rec.recordName.toUpperCase() : "RECORD"}
+                    </CardTitle>
 
-        <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">Payment Collections</CardTitle>
-            <IndianRupee className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">₹8,52,340</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-accent font-medium">+8.2%</span> from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">MCA Records</CardTitle>
-            <Building2 className="h-4 w-4 text-chart-3" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">15,678</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-accent font-medium">+156</span> new records
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">GST Records</CardTitle>
-            <FileText className="h-4 w-4 text-chart-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">23,456</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-accent font-medium">+234</span> new records
-            </p>
-          </CardContent>
-        </Card>
+                    {/* icon + edit button */}
+                    <div className="flex items-center gap-2">
+                      {getIconByName(rec.recordName)}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(rec)}
+                        className="h-8 w-8 p-0"
+                        aria-label={`Edit ${rec.recordName}`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-card-foreground">
+                      {formatNumber(rec.recordValue ?? 0)}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            )}
+          </React.Fragment>
+        )}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-card-foreground">Client Growth Trend</CardTitle>
-            <CardDescription>Monthly client acquisition over the last 6 months</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={clientTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis dataKey="month" className="text-muted-foreground" />
-                  <YAxis className="text-muted-foreground" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }} 
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="clients" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-card-foreground">Payment Collections</CardTitle>
-            <CardDescription>Monthly revenue over the last 6 months</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={paymentData}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis dataKey="month" className="text-muted-foreground" />
-                  <YAxis className="text-muted-foreground" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Amount']}
-                  />
-                  <Bar 
-                    dataKey="amount" 
-                    fill="hsl(var(--chart-secondary))" 
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="text-card-foreground">Quick Actions</CardTitle>
-          <CardDescription>Frequently used management tools</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex-col space-y-2 hover:bg-primary/5">
-              <CreditCard className="h-6 w-6" />
-              <span>Payment History</span>
-              <ArrowUpRight className="h-3 w-3 opacity-50" />
-            </Button>
-            
-            <Button variant="outline" className="h-20 flex-col space-y-2 hover:bg-primary/5">
-              <Building2 className="h-6 w-6" />
-              <span>MCA Data</span>
-              <ArrowUpRight className="h-3 w-3 opacity-50" />
-            </Button>
-            
-            <Button variant="outline" className="h-20 flex-col space-y-2 hover:bg-primary/5">
-              <FileText className="h-6 w-6" />
-              <span>GST Data</span>
-              <ArrowUpRight className="h-3 w-3 opacity-50" />
-            </Button>
-            
-            <Button variant="outline" className="h-20 flex-col space-y-2 hover:bg-primary/5">
-              <Plane className="h-6 w-6" />
-              <span>Import/Export Data</span>
-              <ArrowUpRight className="h-3 w-3 opacity-50" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <EditRecordDialog
+        isOpen={isEditOpen}
+        setIsOpen={setIsEditOpen}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        selectedRecord={selectedRecord}
+        handleSaveEdit={handleSaveEdit}
+        updateLoading={updateLoading}
+      />
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;
