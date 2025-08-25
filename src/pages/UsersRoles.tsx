@@ -161,6 +161,7 @@ const UsersRoles = () => {
     previousPage: null,
   });
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  const [addUpdateUserLoading, setAddUpdateUserLoading] = useState(false);
 
   useEffect(() => {
     const handler = debounce(() => {
@@ -208,6 +209,7 @@ const UsersRoles = () => {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAddUpdateUserLoading(true);
     let valid = true;
     const newErrors = { name: "", email: "", role: "", password: "" };
 
@@ -235,7 +237,10 @@ const UsersRoles = () => {
     }
 
     setErrors(newErrors);
-    if (!valid) return;
+    if (!valid) {
+      setAddUpdateUserLoading(false);
+      return;
+    }
 
     const { success } = await API.post("/auth/signup", formData);
     if (success) {
@@ -247,6 +252,7 @@ const UsersRoles = () => {
       setIsAddDialogOpen(false);
       refetch();
     }
+    setAddUpdateUserLoading(false);
   };
 
   const handleOpenUpdateDialog = (user: any) => {
@@ -262,6 +268,7 @@ const UsersRoles = () => {
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAddUpdateUserLoading(true);
     let valid = true;
     const newErrors = { name: "", email: "", role: "" };
 
@@ -282,7 +289,10 @@ const UsersRoles = () => {
     }
 
     setUpdateErrors(newErrors);
-    if (!valid) return;
+    if (!valid) {
+      setAddUpdateUserLoading(false);
+      return;
+    }
 
     const { success } = await API.put(
       `/auth/users/${selectedUser.id}`,
@@ -297,6 +307,7 @@ const UsersRoles = () => {
       setIsUpdateDialogOpen(false);
       refetch();
     }
+    setAddUpdateUserLoading(false);
   };
 
   const handleDeleteUser = (user: any) => {
@@ -435,6 +446,7 @@ const UsersRoles = () => {
               <Button
                 className="gradient-primary text-primary-foreground"
                 onClick={handleCreateUser}
+                loading={addUpdateUserLoading}
               >
                 Create User
               </Button>
@@ -529,6 +541,7 @@ const UsersRoles = () => {
               <Button
                 className="gradient-primary text-primary-foreground"
                 onClick={handleUpdateUser}
+                loading={addUpdateUserLoading}
               >
                 Update User
               </Button>

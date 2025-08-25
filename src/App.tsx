@@ -15,6 +15,8 @@ import MCAManagement from "./pages/data/MCAManagement";
 import GSTManagement from "./pages/data/GSTManagement";
 import ImportExportManagement from "./pages/data/ImportExportManagement";
 import NotFound from "./pages/NotFound";
+import Subscriptions from "./pages/Subscriptions";
+import Banner from "./pages/Banner";
 
 const queryClient = new QueryClient();
 
@@ -26,51 +28,94 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={
-            <AdminLayout>
-              <Dashboard />
-            </AdminLayout>
-          } />
-          <Route path="/clients" element={
-            <AdminLayout>
-              <Clients />
-            </AdminLayout>
-          } />
-          <Route path="/payments" element={
-            <AdminLayout>
-              <Payments />
-            </AdminLayout>
-          } />
-          <Route path="/login-history" element={
-            <AdminLayout>
-              <LoginHistory />
-            </AdminLayout>
-          } />
-          <Route path="/data/mca" element={
-            <AdminLayout>
-              <MCAManagement />
-            </AdminLayout>
-          } />
-          <Route path="/data/gst" element={
-            <AdminLayout>
-              <GSTManagement />
-            </AdminLayout>
-          } />
-          <Route path="/data/import-export" element={
-            <AdminLayout>
-              <ImportExportManagement />
-            </AdminLayout>
-          } />
-          <Route path="/users-roles" element={
-            <AdminLayout>
-              <UsersRoles />
-            </AdminLayout>
-          } />
-          <Route path="/import-data" element={
-            <AdminLayout>
-              <ImportData />
-            </AdminLayout>
-          } />
+          <Route
+            path="/dashboard"
+            element={
+              <AdminLayout>
+                <Dashboard />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/clients"
+            element={
+              <AdminLayout>
+                <Clients />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <AdminLayout>
+                <Payments />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/banner"
+            element={
+              <AdminLayout>
+                <Banner />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/subscriptions"
+            element={
+              <AdminLayout>
+                <Subscriptions />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/login-history"
+            element={
+              <AdminLayout>
+                <LoginHistory />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/data/mca"
+            element={
+              <AdminLayout>
+                <MCAManagement />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/data/gst"
+            element={
+              <AdminLayout>
+                <GSTManagement />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/data/import-export"
+            element={
+              <AdminLayout>
+                <ImportExportManagement />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/users-roles"
+            element={
+              <AdminLayout>
+                <UsersRoles />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/import-data"
+            element={
+              <AdminLayout>
+                <ImportData />
+              </AdminLayout>
+            }
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

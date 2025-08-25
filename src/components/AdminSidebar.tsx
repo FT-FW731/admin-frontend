@@ -1,12 +1,12 @@
-import { useState } from "react"
-import { NavLink, useLocation } from "react-router-dom"
-import { 
-  LayoutDashboard, 
-  Users, 
-  CreditCard, 
-  History, 
-  Database, 
-  Settings, 
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  CreditCard,
+  History,
+  Database,
+  Settings,
   Upload,
   FileText,
   Building2,
@@ -14,8 +14,10 @@ import {
   Plane,
   UserCheck,
   ChevronDown,
-  Menu
-} from "lucide-react"
+  Menu,
+  Bookmark,
+  BadgeDollarSign,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -28,44 +30,46 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Clients", url: "/clients", icon: Users },
   { title: "Payments", url: "/payments", icon: CreditCard },
+  { title: "Subscriptions", url: "/subscriptions", icon: BadgeDollarSign },
+  { title: "Banner", url: "/banner", icon: Bookmark },
   { title: "Login History", url: "/login-history", icon: History },
-]
+];
 
 const dataManagementItems = [
   { title: "MCA Management", url: "/data/mca", icon: Building2 },
   { title: "GST Management", url: "/data/gst", icon: FileText },
   { title: "Import/Export", url: "/data/import-export", icon: Plane },
-]
+];
 
 const systemItems = [
   { title: "User & Roles", url: "/users-roles", icon: UserCheck },
   { title: "Import Data", url: "/import-data", icon: Upload },
-]
+];
 
 export function AdminSidebar() {
-  const { state } = useSidebar()
-  const location = useLocation()
-  const currentPath = location.pathname
-  const [dataManagementOpen, setDataManagementOpen] = useState(true)
-  
-  const isCollapsed = state === "collapsed"
+  const { state } = useSidebar();
+  const location = useLocation();
+  const currentPath = location.pathname;
+  const [dataManagementOpen, setDataManagementOpen] = useState(true);
 
-  const isActive = (path: string) => currentPath === path
+  const isCollapsed = state === "collapsed";
+
+  const isActive = (path: string) => currentPath === path;
   const getNavClass = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-sidebar-accent text-sidebar-primary font-medium" 
-      : "hover:bg-sidebar-accent/50 text-sidebar-foreground"
+    isActive
+      ? "bg-sidebar-accent text-sidebar-primary font-medium"
+      : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
 
   return (
     <Sidebar collapsible="icon">
@@ -76,7 +80,9 @@ export function AdminSidebar() {
               <LayoutDashboard className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-sidebar-foreground">Admin Panel</h2>
+              <h2 className="text-lg font-semibold text-sidebar-foreground">
+                Admin Panel
+              </h2>
             </div>
           </div>
         )}
@@ -95,7 +101,11 @@ export function AdminSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavClass}>
-                      <item.icon className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-2'}`} />
+                      <item.icon
+                        className={`w-4 h-4 ${
+                          isCollapsed ? "mx-auto" : "mr-2"
+                        }`}
+                      />
                       {!isCollapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -112,15 +122,26 @@ export function AdminSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <Collapsible open={dataManagementOpen} onOpenChange={setDataManagementOpen}>
+              <Collapsible
+                open={dataManagementOpen}
+                onOpenChange={setDataManagementOpen}
+              >
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton className="w-full justify-between hover:bg-sidebar-accent/50">
                     <div className="flex items-center">
-                      <Database className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-2'}`} />
+                      <Database
+                        className={`w-4 h-4 ${
+                          isCollapsed ? "mx-auto" : "mr-2"
+                        }`}
+                      />
                       {!isCollapsed && <span>Data Management</span>}
                     </div>
                     {!isCollapsed && (
-                      <ChevronDown className={`w-4 h-4 transition-transform ${dataManagementOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform ${
+                          dataManagementOpen ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -129,8 +150,14 @@ export function AdminSidebar() {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
                         <NavLink to={item.url} className={getNavClass}>
-                          <item.icon className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-2 ml-4'}`} />
-                          {!isCollapsed && <span className="ml-2">{item.title}</span>}
+                          <item.icon
+                            className={`w-4 h-4 ${
+                              isCollapsed ? "mx-auto" : "mr-2 ml-4"
+                            }`}
+                          />
+                          {!isCollapsed && (
+                            <span className="ml-2">{item.title}</span>
+                          )}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -152,7 +179,11 @@ export function AdminSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} className={getNavClass}>
-                      <item.icon className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-2'}`} />
+                      <item.icon
+                        className={`w-4 h-4 ${
+                          isCollapsed ? "mx-auto" : "mr-2"
+                        }`}
+                      />
                       {!isCollapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -163,5 +194,5 @@ export function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }

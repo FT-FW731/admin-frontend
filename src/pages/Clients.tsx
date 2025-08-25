@@ -215,6 +215,7 @@ const Clients = () => {
     state: "",
     city: "",
   });
+  const [addUpdateClientLoading, setAddUpdateClientLoading] = useState(false);
 
   // Helper functions for dropdown options
   const getRocOptions = () => Object.keys(mcaRocAndCitySubscriptionsMapping);
@@ -232,7 +233,6 @@ const Clients = () => {
       try {
         const res = await API.get("/subscriptions");
         if (res?.success && Array.isArray(res.data)) {
-          console.log("Fetched subscriptions:", res.data);
           setSubscriptions(res.data);
         }
       } catch (err) {
@@ -246,6 +246,7 @@ const Clients = () => {
   // Create client handler
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAddUpdateClientLoading(true);
     let valid = true;
     const newErrors = {
       name: "",
@@ -285,13 +286,12 @@ const Clients = () => {
       newErrors.mobile = "Mobile is required and must be 10 digits";
       valid = false;
     }
-    if (!createFormData.subscriptionId) {
-      newErrors.subscriptionId = "Subscription is required";
-      valid = false;
-    }
 
     setCreateErrors(newErrors);
-    if (!valid) return;
+    if (!valid) {
+      setAddUpdateClientLoading(false);
+      return;
+    }
 
     const { success } = await API.post("/clients", createFormData);
     if (success) {
@@ -311,6 +311,7 @@ const Clients = () => {
       });
       refetch();
     }
+    setAddUpdateClientLoading(false);
   };
 
   // Open update dialog
@@ -336,6 +337,7 @@ const Clients = () => {
   // Update client handler
   const handleUpdateClient = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAddUpdateClientLoading(true);
     let valid = true;
     const newErrors = {
       name: "",
@@ -367,13 +369,12 @@ const Clients = () => {
       newErrors.mobile = "Mobile is required and must be 10 digits";
       valid = false;
     }
-    if (!updateFormData.subscriptionId) {
-      newErrors.subscriptionId = "Subscription is required";
-      valid = false;
-    }
 
     setUpdateErrors(newErrors);
-    if (!valid) return;
+    if (!valid) {
+      setAddUpdateClientLoading(false);
+      return;
+    }
 
     const { success } = await API.put(
       `/clients/${selectedClient.id}`,
@@ -389,6 +390,7 @@ const Clients = () => {
       setSelectedClient(null);
       refetch();
     }
+    setAddUpdateClientLoading(false);
   };
 
   const handleDeleteClient = (client: any) => {
@@ -409,6 +411,7 @@ const Clients = () => {
       setClientToDelete(null);
       refetch();
     }
+    setAddUpdateClientLoading(false);
   };
 
   // Open subscription dialog
@@ -655,39 +658,6 @@ const Clients = () => {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="subscription" className="text-right">
-                    Subscription
-                  </Label>
-                  <div className="col-span-3">
-                    <Select
-                      value={createFormData.subscriptionId}
-                      onValueChange={(value) =>
-                        setCreateFormData({
-                          ...createFormData,
-                          subscriptionId: value,
-                        })
-                      }
-                      disabled={subscriptionsLoading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a plan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subscriptions.map((sub: any) => (
-                          <SelectItem key={sub.id} value={sub.id}>
-                            {sub.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {createErrors.subscriptionId && (
-                      <div className="text-xs text-destructive mt-1">
-                        {createErrors.subscriptionId}
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button
@@ -699,6 +669,7 @@ const Clients = () => {
                 </Button>
                 <Button
                   className="gradient-primary text-primary-foreground"
+                  loading={addUpdateClientLoading}
                   type="submit"
                 >
                   Create Client
@@ -812,39 +783,6 @@ const Clients = () => {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="update-subscription" className="text-right">
-                    Subscription
-                  </Label>
-                  <div className="col-span-3">
-                    <Select
-                      value={updateFormData.subscriptionId}
-                      onValueChange={(value) =>
-                        setUpdateFormData({
-                          ...updateFormData,
-                          subscriptionId: value,
-                        })
-                      }
-                      disabled={subscriptionsLoading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a plan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subscriptions.map((sub: any) => (
-                          <SelectItem key={sub.id} value={sub.id}>
-                            {sub.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {updateErrors.subscriptionId && (
-                      <div className="text-xs text-destructive mt-1">
-                        {updateErrors.subscriptionId}
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button
@@ -856,6 +794,7 @@ const Clients = () => {
                 </Button>
                 <Button
                   className="gradient-primary text-primary-foreground"
+                  loading={addUpdateClientLoading}
                   type="submit"
                 >
                   Update Client
