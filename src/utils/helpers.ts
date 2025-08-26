@@ -30,5 +30,5 @@ export function formatNumber(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") return "0";
   const num = Number(value);
   if (Number.isNaN(num)) return String(value);
-  return new Intl.NumberFormat("en-US").format(num);
+  return new Intl.NumberFormat("en-IN").format(num);
 }

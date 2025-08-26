@@ -423,7 +423,7 @@ const UsersRoles = () => {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Super Admin">Super Admin</SelectItem>
+                      {/* <SelectItem value="Super Admin">Super Admin</SelectItem> */}
                       <SelectItem value="Admin">Admin</SelectItem>
                       <SelectItem value="User">User</SelectItem>
                     </SelectContent>
@@ -518,7 +518,7 @@ const UsersRoles = () => {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Super Admin">Super Admin</SelectItem>
+                      {/* <SelectItem value="Super Admin">Super Admin</SelectItem> */}
                       <SelectItem value="Admin">Admin</SelectItem>
                       <SelectItem value="User">User</SelectItem>
                     </SelectContent>
