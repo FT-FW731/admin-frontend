@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Building2, Shield } from "lucide-react";
 import { tokenControl } from "@/utils/helpers";
+import { useAuth } from "@/hooks/use-auth";
 import { API } from "@/api/axiosInstance";
 
 const Login = () => {
@@ -19,11 +20,11 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [signInLoading, setSignInLoading] = useState(false);
   const navigate = useNavigate();
-  const token = tokenControl("get");
+  const { isAuthenticated, checkAuth } = useAuth();
 
   useEffect(() => {
-    if (token) navigate("/dashboard");
-  }, [token, navigate]);
+    if (isAuthenticated) navigate("/dashboard");
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +32,13 @@ const Login = () => {
     const { data } = await API.post("/auth/login", { email, password });
     if (data && data?.token) {
       tokenControl("set", data.token);
+      await checkAuth();
       navigate("/dashboard");
     }
     setSignInLoading(false);
   };
 
-  if (token) return <Navigate to="/dashboard" replace />;
+  // if (token) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="min-h-screen flex">
