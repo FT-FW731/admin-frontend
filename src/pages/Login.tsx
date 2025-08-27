@@ -11,12 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Building2, Shield } from "lucide-react";
-import { API } from "@/api/axiosInstance";
 import { tokenControl } from "@/utils/helpers";
+import { API } from "@/api/axiosInstance";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [signInLoading, setSignInLoading] = useState(false);
   const navigate = useNavigate();
   const token = tokenControl("get");
 
@@ -26,11 +27,13 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignInLoading(true);
     const { data } = await API.post("/auth/login", { email, password });
     if (data && data?.token) {
       tokenControl("set", data.token);
       navigate("/dashboard");
     }
+    setSignInLoading(false);
   };
 
   if (token) return <Navigate to="/dashboard" replace />;
@@ -96,7 +99,12 @@ const Login = () => {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" size="lg">
+              <Button
+                type="submit"
+                className="w-full"
+                loading={signInLoading}
+                size="lg"
+              >
                 Sign In
               </Button>
             </form>

@@ -17,6 +17,7 @@ import {
   Menu,
   Bookmark,
   BadgeDollarSign,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -36,25 +37,78 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useAuth } from "@/hooks/use-auth";
+import { tokenControl } from "@/utils/helpers";
+import { useNavigate } from "react-router-dom";
 
 const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Clients", url: "/clients", icon: Users },
-  { title: "Payments", url: "/payments", icon: CreditCard },
-  { title: "Subscriptions", url: "/subscriptions", icon: BadgeDollarSign },
-  { title: "Banner", url: "/banner", icon: Bookmark },
-  { title: "Login History", url: "/login-history", icon: History },
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+    permission: "dashboard.edit",
+  },
+  { title: "Clients", url: "/clients", icon: Users, permission: "client.edit" },
+  {
+    title: "Payments",
+    url: "/payments",
+    icon: CreditCard,
+    permission: "payment.edit",
+  },
+  {
+    title: "Subscriptions",
+    url: "/subscriptions",
+    icon: BadgeDollarSign,
+    permission: "subscription.edit",
+  },
+  {
+    title: "Banner",
+    url: "/banner",
+    icon: Bookmark,
+    permission: "banner.edit",
+  },
+  {
+    title: "Login History",
+    url: "/login-history",
+    icon: History,
+    permission: "login_history.edit",
+  },
 ];
 
 const dataManagementItems = [
-  { title: "MCA Management", url: "/data/mca", icon: Building2 },
-  { title: "GST Management", url: "/data/gst", icon: FileText },
-  { title: "Import/Export", url: "/data/import-export", icon: Plane },
+  {
+    title: "MCA Management",
+    url: "/data/mca",
+    icon: Building2,
+    permission: "mca.edit",
+  },
+  {
+    title: "GST Management",
+    url: "/data/gst",
+    icon: FileText,
+    permission: "gst.edit",
+  },
+  {
+    title: "Import/Export",
+    url: "/data/import-export",
+    icon: Plane,
+    permission: "import_export.edit",
+  },
 ];
 
 const systemItems = [
-  { title: "User & Roles", url: "/users-roles", icon: UserCheck },
-  { title: "Import Data", url: "/import-data", icon: Upload },
+  {
+    title: "User & Roles",
+    url: "/users-roles",
+    icon: UserCheck,
+    permission: "user_roles.edit",
+  },
+  {
+    title: "Import Data",
+    url: "/import-data",
+    icon: Upload,
+    permission: "import_data.edit",
+  },
 ];
 
 export function AdminSidebar() {
@@ -62,6 +116,15 @@ export function AdminSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const [dataManagementOpen, setDataManagementOpen] = useState(true);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const permissions: string[] = user?.permissions ?? [];
+
+  const hasPermission = (perm?: string) => {
+    if (!perm) return true;
+    return user?.role !== "Admin" ? permissions.includes(perm) : true;
+  };
 
   const isCollapsed = state === "collapsed";
 
@@ -70,6 +133,12 @@ export function AdminSidebar() {
     isActive
       ? "bg-sidebar-accent text-sidebar-primary font-medium"
       : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
+
+  const handleLogout = () => {
+    tokenControl("remove");
+    navigate("/", { replace: true });
+    window.location.reload();
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -97,26 +166,28 @@ export function AdminSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavClass}>
-                      <item.icon
-                        className={`w-4 h-4 ${
-                          isCollapsed ? "mx-auto" : "mr-2"
-                        }`}
-                      />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainItems
+                .filter((it) => hasPermission(it.permission))
+                .map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} end className={getNavClass}>
+                        <item.icon
+                          className={`w-4 h-4 ${
+                            isCollapsed ? "mx-auto" : "mr-2"
+                          }`}
+                        />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Data Management */}
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs uppercase tracking-wider font-medium">
             {!isCollapsed && "Data Management"}
           </SidebarGroupLabel>
@@ -146,27 +217,29 @@ export function AdminSidebar() {
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-1">
-                  {dataManagementItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink to={item.url} className={getNavClass}>
-                          <item.icon
-                            className={`w-4 h-4 ${
-                              isCollapsed ? "mx-auto" : "mr-2 ml-4"
-                            }`}
-                          />
-                          {!isCollapsed && (
-                            <span className="ml-2">{item.title}</span>
-                          )}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {dataManagementItems
+                    .filter((it) => hasPermission(it.permission))
+                    .map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <NavLink to={item.url} className={getNavClass}>
+                            <item.icon
+                              className={`w-4 h-4 ${
+                                isCollapsed ? "mx-auto" : "mr-2 ml-4"
+                              }`}
+                            />
+                            {!isCollapsed && (
+                              <span className="ml-2">{item.title}</span>
+                            )}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
                 </CollapsibleContent>
               </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
 
         {/* System */}
         <SidebarGroup>
@@ -175,24 +248,45 @@ export function AdminSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {systemItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={getNavClass}>
-                      <item.icon
-                        className={`w-4 h-4 ${
-                          isCollapsed ? "mx-auto" : "mr-2"
-                        }`}
-                      />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {systemItems
+                .filter((it) => hasPermission(it.permission))
+                .map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} className={getNavClass}>
+                        <item.icon
+                          className={`w-4 h-4 ${
+                            isCollapsed ? "mx-auto" : "mr-2"
+                          }`}
+                        />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      {/* Logout */}
+      <div className="px-2 py-3 border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center text-sidebar-foreground hover:bg-sidebar-accent/50 px-2 py-1 rounded"
+              >
+                <LogOut
+                  className={`w-4 h-4 ${isCollapsed ? "mx-auto" : "mr-2"}`}
+                />
+                {!isCollapsed && <span>Logout</span>}
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </div>
     </Sidebar>
   );
 }

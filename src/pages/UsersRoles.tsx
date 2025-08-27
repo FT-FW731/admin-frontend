@@ -391,7 +391,7 @@ const UsersTable = ({
   setPagination,
   searchTerm,
   setSearchTerm,
-  handleOpenAssignDialog, // renamed prop
+  handleOpenAssignDialog,
 }: any) => {
   return (
     <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
@@ -512,15 +512,52 @@ const UsersTable = ({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          {/* <Switch checked={user.permissions.clientAccess} /> */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {user?.role === "Admin" ? (
+                          <Badge className="px-2 py-1" variant="destructive">
+                            All permissions
+                          </Badge>
+                        ) : user?.permissions?.length > 0 ? (
+                          <>
+                            {user.permissions.slice(0, 2).map((p: any) => {
+                              const desc =
+                                p?.permission?.description ||
+                                p?.description ||
+                                "Permission";
+                              const short =
+                                desc.length > 22
+                                  ? desc.slice(0, 22) + "…"
+                                  : desc;
+                              const key = p?.permission?.id ?? p?.id ?? desc;
+                              return (
+                                <Badge
+                                  key={key}
+                                  className="px-2 py-1 text-sm"
+                                  title={desc}
+                                >
+                                  {short}
+                                </Badge>
+                              );
+                            })}
+                            {user.permissions.length > 2 && (
+                              <span className="text-xs text-muted-foreground ml-1">
+                                +{user.permissions.length - 2} more
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            No permissions
+                          </span>
+                        )}
+                        {/* <div className="flex items-center space-x-2">
+                          <Switch checked={user.permissions.clientAccess} />
                           <span className="text-xs">Client Access</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {/* <Switch checked={user.permissions.dataManagement} /> */}
+                          <Switch checked={user.permissions.dataManagement} />
                           <span className="text-xs">Data Management</span>
-                        </div>
+                        </div> */}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -540,12 +577,14 @@ const UsersTable = ({
                           </DropdownMenuItem>
 
                           {/* Assign Permissions now opens the dialog */}
-                          <DropdownMenuItem
-                            onClick={() => handleOpenAssignDialog(user)}
-                          >
-                            <Shield className="mr-2 h-4 w-4" />
-                            Assign Permissions
-                          </DropdownMenuItem>
+                          {user?.role !== "Admin" && (
+                            <DropdownMenuItem
+                              onClick={() => handleOpenAssignDialog(user)}
+                            >
+                              <Shield className="mr-2 h-4 w-4" />
+                              Assign Permissions
+                            </DropdownMenuItem>
+                          )}
 
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -566,6 +605,141 @@ const UsersTable = ({
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+const AssignPermissionsDialog = ({
+  isOpen,
+  setIsOpen,
+  assigningUser,
+  selectedCount,
+  permissionSearch,
+  setPermissionSearch,
+  selectedPermissionIds,
+  getPermissionIcon,
+  togglePermission,
+  assignLoading,
+  handleToggleSelectAll,
+  filteredPermissions,
+  permissionsLoading,
+  permissionsError,
+  handleSaveAssignedPermissions,
+}: any) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-[700px]">
+        <DialogHeader>
+          <DialogTitle>Assign Permissions</DialogTitle>
+          <DialogDescription>
+            Please select the permissions you want to assign.
+          </DialogDescription>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              Assign permissions to{" "}
+              <strong>{assigningUser?.name ?? "the user"}</strong>.
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="text-sm text-muted-foreground">
+                Selected:{" "}
+                <span className="font-medium text-card-foreground">
+                  {selectedCount}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleSelectAll}
+                disabled={(filteredPermissions ?? []).length === 0}
+              >
+                Select/Deselect All
+              </Button>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="py-3">
+          {permissionsLoading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : permissionsError ? (
+            <div className="text-sm text-destructive">
+              Failed to load permissions.
+            </div>
+          ) : (
+            <React.Fragment>
+              <div className="flex items-center gap-3 mb-3">
+                <Input
+                  placeholder="Search permissions..."
+                  value={permissionSearch}
+                  onChange={(e: any) => setPermissionSearch(e.target.value)}
+                  className="flex-1"
+                />
+                <div className="text-sm text-muted-foreground">
+                  {filteredPermissions.length} shown
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-auto pr-2">
+                {filteredPermissions.length === 0 ? (
+                  <div className="text-sm text-muted-foreground col-span-full">
+                    No permissions match your search.
+                  </div>
+                ) : (
+                  filteredPermissions.map((p: any) => {
+                    const Icon = getPermissionIcon(p.resource);
+                    const id = Number(p.id);
+                    const isChecked = selectedPermissionIds.includes(id);
+                    return (
+                      <div
+                        key={p.id}
+                        className={`flex hover:cursor-pointer items-start gap-3 p-3 rounded border ${
+                          isChecked
+                            ? "border-primary/60 bg-primary/5"
+                            : "border-border bg-transparent"
+                        }`}
+                        onClick={() => togglePermission(id)}
+                      >
+                        <div className="pt-1">
+                          <Icon className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm">
+                              {p.description}
+                            </div>
+                            {/* <div>
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => togglePermission(id)}
+                                className="h-4 w-4"
+                              />
+                            </div> */}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </React.Fragment>
+          )}
+        </div>
+
+        <div className="flex justify-end space-x-2 mt-4">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            className="gradient-primary text-primary-foreground"
+            onClick={handleSaveAssignedPermissions}
+            loading={assignLoading}
+            disabled={assignLoading}
+          >
+            Save
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -804,8 +978,11 @@ const UsersRoles = () => {
   // Open dialog for a user; preselect any existing permissions if available on user
   const handleOpenAssignDialog = (user: any) => {
     setAssigningUser(user);
-    const preselected =
-      (user?.permissions || []).map((p: any) => Number(p.id)) || [];
+    // const preselected =
+    //   (user?.permissions || []).map((p: any) => Number(p.id)) || [];
+    const preselected = (user?.permissions ?? []).map(
+      (p: { permission: { id: number } }) => p.permission.id
+    );
     setSelectedPermissionIds(preselected);
     setIsAssignDialogOpen(true);
   };
@@ -841,6 +1018,7 @@ const UsersRoles = () => {
       setIsAssignDialogOpen(false);
       setAssigningUser(null);
       setSelectedPermissionIds([]);
+      refetch();
     }
     setAssignLoading(false);
   };
@@ -936,123 +1114,26 @@ const UsersRoles = () => {
         setPagination={setPagination}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        handleOpenAssignDialog={handleOpenAssignDialog} // pass new handler
+        handleOpenAssignDialog={handleOpenAssignDialog}
       />
 
-      {/* Assign Permissions Dialog */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>Assign Permissions</DialogTitle>
-            <DialogDescription className="flex items-center justify-between gap-4">
-              <div>
-                Assign permissions to{" "}
-                <strong>{assigningUser?.name ?? "the user"}</strong>.
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="text-sm text-muted-foreground">
-                  Selected:{" "}
-                  <span className="font-medium text-card-foreground">
-                    {selectedCount}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleToggleSelectAll}
-                  disabled={(filteredPermissions ?? []).length === 0}
-                >
-                  Select/Deselect All
-                </Button>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-3">
-            {permissionsLoading ? (
-              <div className="text-sm text-muted-foreground">Loading...</div>
-            ) : permissionsError ? (
-              <div className="text-sm text-destructive">
-                Failed to load permissions.
-              </div>
-            ) : (
-              <React.Fragment>
-                <div className="flex items-center gap-3 mb-3">
-                  <Input
-                    placeholder="Search permissions..."
-                    value={permissionSearch}
-                    onChange={(e: any) => setPermissionSearch(e.target.value)}
-                    className="flex-1"
-                  />
-                  <div className="text-sm text-muted-foreground">
-                    {filteredPermissions.length} shown
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-auto pr-2">
-                  {filteredPermissions.length === 0 ? (
-                    <div className="text-sm text-muted-foreground col-span-full">
-                      No permissions match your search.
-                    </div>
-                  ) : (
-                    filteredPermissions.map((p: any) => {
-                      const Icon = getPermissionIcon(p.resource);
-                      const id = Number(p.id);
-                      const isChecked = selectedPermissionIds.includes(id);
-                      return (
-                        <div
-                          key={p.id}
-                          className={`flex items-start gap-3 p-3 rounded border ${
-                            isChecked
-                              ? "border-primary/60 bg-primary/5"
-                              : "border-border bg-transparent"
-                          }`}
-                        >
-                          <div className="pt-1">
-                            <Icon className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <div className="font-medium text-sm">
-                                {p.description}
-                              </div>
-                              <div>
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={() => togglePermission(id)}
-                                  className="h-4 w-4"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </React.Fragment>
-            )}
-          </div>
-
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsAssignDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="gradient-primary text-primary-foreground"
-              onClick={handleSaveAssignedPermissions}
-              loading={assignLoading}
-              disabled={assignLoading}
-            >
-              Save
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Replaced inline Assign Permissions Dialog with the separated component */}
+      <AssignPermissionsDialog
+        isOpen={isAssignDialogOpen}
+        setIsOpen={setIsAssignDialogOpen}
+        selectedCount={selectedCount}
+        assigningUser={assigningUser}
+        permissionSearch={permissionSearch}
+        setPermissionSearch={setPermissionSearch}
+        selectedPermissionIds={selectedPermissionIds}
+        setSelectedPermissionIds={setSelectedPermissionIds}
+        getPermissionIcon={getPermissionIcon}
+        togglePermission={togglePermission}
+        assignLoading={assignLoading}
+        filteredPermissions={filteredPermissions}
+        handleToggleSelectAll={handleToggleSelectAll}
+        handleSaveAssignedPermissions={handleSaveAssignedPermissions}
+      />
 
       {/* Delete Confirmation Dialog */}
       <DeleteUserAlert
