@@ -165,22 +165,30 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 min-h-screen relative">
+      {/* Background Pattern */}
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.05)_1px,transparent_0)] bg-[length:32px_32px]" />
+      </div>
+      
+ 
+      
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative z-10">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">
             Welcome back! Here's your business overview.
           </p>
         </div>
-        <Badge variant="outline" className="px-3 py-1">
+        <Badge variant="outline" className="px-3 py-1 bg-white/60 backdrop-blur-sm border-green-200 text-green-700">
+          <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
           Live Data
         </Badge>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
         {records.length <= 0 && isLoading ? (
           <CardSkeleton count={5} />
         ) : !isLoading && records.length <= 0 ? (
@@ -196,10 +204,13 @@ const Dashboard = () => {
                 recordValue: number;
               }) => (
                 <Card
-                  className="shadow-card border-0 bg-card/50 backdrop-blur"
+                  className="shadow-lg border-0 bg-white/70 backdrop-blur-sm hover:bg-white/80 transition-all duration-200 hover:shadow-xl hover:scale-[1.02] relative overflow-hidden"
                   key={rec.id}
                 >
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  {/* Subtle gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-blue-50/30 pointer-events-none" />
+                  
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                     <CardTitle className="text-sm font-medium text-card-foreground">
                       {rec.recordName ? rec.recordName.toUpperCase() : "RECORD"}
                     </CardTitle>
@@ -218,7 +229,7 @@ const Dashboard = () => {
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="relative z-10">
                     <div className="text-2xl font-bold text-card-foreground">
                       {formatNumber(rec.recordValue ?? 0)}
                     </div>

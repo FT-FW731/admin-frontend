@@ -167,4 +167,31 @@
   .shadow-elevated {
     box-shadow: var(--shadow-lg);
   }
+
+  /* New gradient backgrounds */
+  .bg-pattern-dots {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(59, 130, 246, 0.1) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  .bg-pattern-grid {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(148, 163, 184, 0.05) 1px,
+      transparent 0
+    );
+    background-size: 32px 32px;
+  }
+
+  .glass-card {
+    @apply backdrop-blur-sm bg-white/80 border-white/20 shadow-xl;
+  }
+
+  .glass-panel {
+    @apply backdrop-blur-sm bg-white/60 border-white/20 shadow-sm;
+  }
 }
