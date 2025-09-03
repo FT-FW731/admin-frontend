@@ -286,7 +286,7 @@ const ImportData = () => {
             </h4>
             <ul className="text-xs text-muted-foreground space-y-1">
               <li>• Supported formats: CSV, Excel (.xlsx, .xls)</li>
-              <li>• Maximum file size: 5MB</li>
+              <li>• Maximum file size: 15MB</li>
               <li>
                 • Ensure proper column headers match the category requirements
               </li>

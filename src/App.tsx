@@ -12,6 +12,7 @@ import { AdminLayout } from "./components/AdminLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
+import ClientDetails from "./pages/ClientDetails";
 import Payments from "./pages/Payments";
 import LoginHistory from "./pages/LoginHistory";
 import UsersRoles from "./pages/UsersRoles";
@@ -111,6 +112,16 @@ const App = () => {
             <ProtectedRoute permission="client.edit">
               <AdminLayout>
                 <Clients />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clients/:id"
+          element={
+            <ProtectedRoute permission="client.edit">
+              <AdminLayout>
+                <ClientDetails />
               </AdminLayout>
             </ProtectedRoute>
           }

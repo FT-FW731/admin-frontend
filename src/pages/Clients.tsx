@@ -36,7 +36,9 @@ import {
   Users,
   MoreHorizontal,
   Trash2,
+  Eye,
 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,6 +113,7 @@ const mockClients = [
 ];
 
 const Clients = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [pagination, setPagination] = useState({
@@ -971,7 +974,14 @@ const Clients = () => {
                       <TableRow key={client.id}>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{client.name}</div>
+                            <div className="font-medium">
+                              <Link
+                                to={`/clients/${client.id}`}
+                                className="hover:underline"
+                              >
+                                {client.name}
+                              </Link>
+                            </div>
                             <div className="text-sm text-muted-foreground">
                               {client.email}
                             </div>
@@ -998,6 +1008,14 @@ const Clients = () => {
                               >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Client
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(`/clients/${client.id}`)
+                                }
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Client
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
