@@ -1,3 +1,5 @@
+import moment from "moment";
+import { toast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -38,6 +40,7 @@ import useGetData from "@/hooks/use-get-data";
 import TableSkeleton from "@/components/TableSkeleton";
 import { debounce, formatNumber } from "@/utils/helpers";
 import CardSkeleton from "@/components/CardSkeleton";
+import { generateAndDownloadInvoicePDF } from "@/utils/invoicePDF";
 
 const paymentData = [
   { month: "Jan", amount: 85000 },
@@ -76,6 +79,8 @@ const Payments = () => {
     changeDirection: "no_change",
   });
 
+  const [chartRange, setChartRange] = useState<"6m" | "1y" | "2y">("6m");
+
   useEffect(() => {
     const handler = debounce(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -91,7 +96,7 @@ const Payments = () => {
   );
 
   const { data: statsData, isLoading: isLoadingStats } = useGetData(
-    `/miscellaneous/payments/stats`
+    `/miscellaneous/payments/stats?range=${chartRange}`
   );
 
   useEffect(() => {
@@ -148,7 +153,7 @@ const Payments = () => {
       </div>
 
       {/* Stats Cards */}
-      {isLoadingStats ? (
+      {isLoadingStats && !cardStats ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <CardSkeleton count={4} />
         </div>
@@ -239,13 +244,38 @@ const Payments = () => {
 
       {/* Payment Trend Chart */}
       <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="text-card-foreground">
-            Payment Collections Trend
-          </CardTitle>
-          <CardDescription>
-            Monthly payment collections over the last 6 months
-          </CardDescription>
+        <CardHeader className="flex items-center justify-between">
+          <div className="text-center">
+            <CardTitle className="text-card-foreground">
+              Payment Collections Trend
+            </CardTitle>
+            <CardDescription>
+              Monthly payment collections over the selected range
+            </CardDescription>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant={chartRange === "6m" ? "default" : "outline"}
+              onClick={() => setChartRange("6m")}
+              size="sm"
+            >
+              6M
+            </Button>
+            <Button
+              variant={chartRange === "1y" ? "default" : "outline"}
+              onClick={() => setChartRange("1y")}
+              size="sm"
+            >
+              1Y
+            </Button>
+            <Button
+              variant={chartRange === "2y" ? "default" : "outline"}
+              onClick={() => setChartRange("2y")}
+              size="sm"
+            >
+              2Y
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
@@ -404,9 +434,81 @@ const Payments = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                        {/* <code className="text-xs bg-muted px-1 py-0.5 rounded">
                           {payment.razorpayOrderId}
-                        </code>
+                        </code> */}
+
+                        {payment?.status === "completed" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              let description = [
+                                {
+                                  key: "Start Date",
+                                  value: moment(payment.startDate).format(
+                                    "DD MMM YYYY"
+                                  ),
+                                },
+                              ];
+                              const name = payment.subscription.name;
+                              const val = payment?.values || "";
+                              if (name.toLowerCase().includes("india")) {
+                                description.push({
+                                  key: "Location",
+                                  value: "India",
+                                });
+                              } else if (name.toLowerCase().includes("state")) {
+                                description.push({
+                                  key: "State",
+                                  value: Array.isArray(val)
+                                    ? val.join(", ")
+                                    : val,
+                                });
+                              } else if (name.toLowerCase().includes("city")) {
+                                description.push({
+                                  key: "City",
+                                  value: Array.isArray(val)
+                                    ? val.join(", ")
+                                    : val,
+                                });
+                              } else if (name.toLowerCase().includes("roc")) {
+                                description.push({
+                                  key: "ROC",
+                                  value: Array.isArray(val)
+                                    ? val.join(", ")
+                                    : val,
+                                });
+                              }
+
+                              const orderData = {
+                                id: payment.id ?? payment.razorpayOrderId,
+                                createdAt: payment.createdAt,
+                                company: payment.company ?? payment.client,
+                                subscription: payment.subscription ?? {
+                                  name: "Subscription",
+                                  price: payment.subscription?.price ?? 0,
+                                },
+                                description,
+                                unit: payment.unit ?? 1,
+                                amount: payment.amount ?? 0,
+                              };
+
+                              try {
+                                await generateAndDownloadInvoicePDF(orderData);
+                              } catch (err) {
+                                toast({
+                                  title: "Error",
+                                  description:
+                                    "Failed to download invoice. Please try again.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            Download
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))

@@ -15,6 +15,18 @@ import { Input } from "@/components/ui/input";
 import { API } from "@/api/axiosInstance";
 import { toast } from "@/hooks/use-toast";
 import Loader from "@/components/ui/loader";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { IndianRupee } from "lucide-react";
+import { formatNumber } from "@/utils/helpers";
+import TableSkeleton from "@/components/TableSkeleton";
 
 type Client = {
   id?: number | string;
@@ -39,8 +51,13 @@ const ClientDetails: React.FC<Props> = ({ clientId }) => {
   const navigate = useNavigate();
   const id = clientId ?? params.id;
 
+  const [paymentsPage, setPaymentsPage] = useState<number>(1);
+  const [paymentsLimit, setPaymentsLimit] = useState<number>(10);
+
   const { data, isLoading, error, refetch } = useGetData<unknown>(
-    id ? `/clients/${id}` : "/clients"
+    id
+      ? `/clients/${id}?page=${paymentsPage}&limit=${paymentsLimit}`
+      : "/clients"
   );
 
   // Try to support a few possible API shapes
@@ -51,9 +68,21 @@ const ClientDetails: React.FC<Props> = ({ clientId }) => {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const [clientPayments, setClientPayments] = useState<any[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsPagination, setPaymentsPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    limit: 10,
+    hasNextPage: false,
+    hasPreviousPage: false,
+    nextPage: null as number | null,
+    previousPage: null as number | null,
+  });
+
   useEffect(() => {
     if (client) {
-      // populate editable fields from API response `data` shape (sample in request uses `data` key)
       const src = (data as any)?.data || (data as any)?.user || data;
       setForm({
         id: src?.id,
@@ -72,26 +101,34 @@ const ClientDetails: React.FC<Props> = ({ clientId }) => {
         lastLogin: src?.lastLogin ?? src?.updatedAt,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  if (!id) {
-    return (
-      <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
-        <CardHeader>
-          <CardTitle>No client id</CardTitle>
-          <CardDescription>
-            Provide a client id via props or route param.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground">
-            Unable to fetch client details without an id.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  useEffect(() => {
+    const src = (data as any)?.data || (data as any)?.user || data;
+    if (!src) return;
+
+    const paymentsObj =
+      src.payments || (data as any)?.payments || src.user?.payments || null;
+
+    if (paymentsObj) {
+      const records = paymentsObj.records ?? paymentsObj;
+      const pagination = paymentsObj.pagination ?? paymentsObj.pagination ?? {};
+      setClientPayments(records || []);
+      setPaymentsPagination((prev) => ({
+        ...prev,
+        currentPage: pagination.currentPage ?? prev.currentPage,
+        totalPages: pagination.totalPages ?? prev.totalPages,
+        totalCount: pagination.totalCount ?? prev.totalCount,
+        limit: pagination.limit ?? prev.limit,
+        hasNextPage: pagination.hasNextPage ?? prev.hasNextPage,
+        hasPreviousPage: pagination.hasPreviousPage ?? prev.hasPreviousPage,
+        nextPage: pagination.nextPage ?? prev.nextPage,
+        previousPage: pagination.previousPage ?? prev.previousPage,
+      }));
+    } else {
+      setClientPayments([]);
+    }
+  }, [data]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -167,6 +204,42 @@ const ClientDetails: React.FC<Props> = ({ clientId }) => {
       toast({ title: `Copy failed`, variant: "destructive" });
     }
   };
+
+  const fetchPaymentsPage = async (page = 1, limit = 10) => {
+    if (!id) return;
+    setPaymentsPage(page);
+    setPaymentsLimit(limit);
+    setPaymentsLoading(true);
+    try {
+      await refetch();
+    } catch (err: any) {
+      toast({
+        title: "Failed to fetch payments",
+        description: err?.message ?? "Unable to load payments for this client",
+        variant: "destructive",
+      });
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
+  if (!id) {
+    return (
+      <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
+        <CardHeader>
+          <CardTitle>No client id</CardTitle>
+          <CardDescription>
+            Provide a client id via props or route param.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground">
+            Unable to fetch client details without an id.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
@@ -401,6 +474,133 @@ const ClientDetails: React.FC<Props> = ({ clientId }) => {
                         : "-"}
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Client Payments Table */}
+              <div>
+                <h3 className="text-sm font-medium mb-2">Payment History</h3>
+
+                <div className="flex items-center justify-end mb-4">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!paymentsPagination.hasPreviousPage}
+                      onClick={() => {
+                        const prev =
+                          paymentsPagination.previousPage ??
+                          Math.max(1, paymentsPagination.currentPage - 1);
+                        fetchPaymentsPage(prev, paymentsPagination.limit);
+                      }}
+                    >
+                      Prev
+                    </Button>
+                    <span className="text-sm">
+                      Page {paymentsPagination.currentPage} of{" "}
+                      {paymentsPagination.totalPages}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!paymentsPagination.hasNextPage}
+                      onClick={() => {
+                        const next =
+                          paymentsPagination.nextPage ??
+                          Math.min(
+                            paymentsPagination.totalPages,
+                            paymentsPagination.currentPage + 1
+                          );
+                        fetchPaymentsPage(next, paymentsPagination.limit);
+                      }}
+                    >
+                      Next
+                    </Button>
+                    <label className="ml-4 mr-2 text-sm">Rows:</label>
+                    <select
+                      value={paymentsPagination.limit}
+                      onChange={(e) => {
+                        const lim = Number(e.target.value);
+                        setPaymentsPagination((prev) => ({
+                          ...prev,
+                          limit: lim,
+                          currentPage: 1,
+                        }));
+                        fetchPaymentsPage(1, lim);
+                      }}
+                      className="border rounded px-2 py-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Payment ID</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Subscription</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paymentsLoading && clientPayments.length === 0 ? (
+                        <TableSkeleton columns={5} rows={6} />
+                      ) : clientPayments.length === 0 && !paymentsLoading ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="text-center text-muted-foreground"
+                          >
+                            No payments found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        clientPayments.map((payment: any) => (
+                          <TableRow key={payment.razorpayOrderId ?? payment.id}>
+                            <TableCell className="font-medium">
+                              {payment.razorpayOrderId ??
+                                payment.razorpayPaymentId ??
+                                payment.id}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <IndianRupee className="w-3 h-3 mr-1" />
+                                {formatNumber((payment.amount ?? 0) / 100)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {payment.createdAt
+                                ? new Date(payment.createdAt).toLocaleString()
+                                : "-"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  String(payment.status).toLowerCase() ===
+                                    "captured" ||
+                                  String(payment.status).toLowerCase() ===
+                                    "completed"
+                                    ? "default"
+                                    : "secondary"
+                                }
+                              >
+                                {payment.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {payment.order?.subscriptionId ?? "-"}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </div>

@@ -212,6 +212,11 @@ const Clients = () => {
   });
   const [subscriptionError, setSubscriptionError] = useState("");
 
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState<string>(
+    () => new Date().toISOString().split("T")[0]
+  );
+  const [subscriptionUnit, setSubscriptionUnit] = useState<number>(1);
+
   const [subscriptionPlan, setSubscriptionPlan] = useState<any>(null);
   const [subscriptionDropdowns, setSubscriptionDropdowns] = useState({
     roc: "",
@@ -422,6 +427,8 @@ const Clients = () => {
     setSubscriptionClient({ ...client, userId: client.id });
     setSubscriptionForm({ subscriptionId: client.subscriptionId || "" });
     setSubscriptionError("");
+    setSubscriptionStartDate(new Date().toISOString().split("T")[0]);
+    setSubscriptionUnit(1);
     setIsSubscriptionDialogOpen(true);
   };
 
@@ -452,6 +459,15 @@ const Clients = () => {
     e.preventDefault();
     if (!subscriptionForm.subscriptionId) {
       setSubscriptionError("Subscription is required");
+      return;
+    }
+
+    if (!subscriptionStartDate) {
+      setSubscriptionError("Start date is required");
+      return;
+    }
+    if (![1, 3, 6, 12].includes(Number(subscriptionUnit))) {
+      setSubscriptionError("Please select a valid duration");
       return;
     }
 
@@ -498,9 +514,10 @@ const Clients = () => {
 
     const { success } = await API.post(`/subscriptions/initiate-order`, {
       subscriptionId: Number(subscriptionForm.subscriptionId),
-      unit: 1,
+      unit: Number(subscriptionUnit),
       values,
       userId: Number(subscriptionClient.userId),
+      startdate: subscriptionStartDate,
     });
     if (success) {
       toast({
@@ -1130,6 +1147,47 @@ const Clients = () => {
                       {subscriptionError}
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Start date input */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="start-date" className="text-right">
+                  Start Date
+                </Label>
+                <div className="col-span-3">
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={subscriptionStartDate}
+                    onChange={(e) => setSubscriptionStartDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Unit / Duration select */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="unit" className="text-right">
+                  Duration (months)
+                </Label>
+                <div className="col-span-3">
+                  <Select
+                    value={String(subscriptionUnit)}
+                    onValueChange={(value) =>
+                      setSubscriptionUnit(Number(value))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 month</SelectItem>
+                      <SelectItem value="3">3 months</SelectItem>
+                      <SelectItem value="6">6 months</SelectItem>
+                      <SelectItem value="12">12 months</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

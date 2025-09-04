@@ -23,7 +23,7 @@ const Login = () => {
   const { isAuthenticated, checkAuth } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated) navigate("/dashboard");
+    if (isAuthenticated) navigate("/");
   }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ const Login = () => {
     if (data && data?.token) {
       tokenControl("set", data.token);
       await checkAuth();
-      navigate("/dashboard");
+      navigate("/");
     }
     setSignInLoading(false);
   };
@@ -46,7 +46,7 @@ const Login = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(59,130,246,0.1)_1px,transparent_0)] bg-[length:24px_24px]" />
       </div>
-      
+
       {/* Left Side - Hero/Branding */}
       <div className="flex-1 flex items-center justify-center p-8 relative z-10">
         <div className="text-center text-[#1a2a3a] max-w-md">
@@ -56,7 +56,9 @@ const Login = () => {
               src="/ff-logo.png"
               alt="Fact Flow Technologies"
               className="h-16 w-auto mx-auto drop-shadow-sm"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
             />
           </div>
           <div className="flex justify-center mb-6">
