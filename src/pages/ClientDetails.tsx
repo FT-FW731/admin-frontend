@@ -27,6 +27,11 @@ import { Badge } from "@/components/ui/badge";
 import { IndianRupee } from "lucide-react";
 import { formatNumber } from "@/utils/helpers";
 import TableSkeleton from "@/components/TableSkeleton";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 type Client = {
   id?: number | string;
@@ -373,9 +378,9 @@ const ClientDetails: React.FC<Props> = ({ clientId }) => {
                   </div>
 
                   <div>
-                    <Label>Subscription</Label>
+                    <Label>Total Subscriptions Purchased</Label>
                     <Input
-                      value={String(form.subscriptionId ?? "-")}
+                      value={String(paymentsPagination.totalCount ?? "-")}
                       disabled
                     />
                   </div>
@@ -546,15 +551,17 @@ const ClientDetails: React.FC<Props> = ({ clientId }) => {
                         <TableHead>Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Subscription</TableHead>
+                        <TableHead>Subscription Start Date</TableHead>
+                        <TableHead>Subscription End Date</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paymentsLoading && clientPayments.length === 0 ? (
-                        <TableSkeleton columns={5} rows={6} />
+                        <TableSkeleton columns={7} rows={6} />
                       ) : clientPayments.length === 0 && !paymentsLoading ? (
                         <TableRow>
                           <TableCell
-                            colSpan={5}
+                            colSpan={7}
                             className="text-center text-muted-foreground"
                           >
                             No payments found.
@@ -594,7 +601,30 @@ const ClientDetails: React.FC<Props> = ({ clientId }) => {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {payment.order?.subscriptionId ?? "-"}
+                              {payment.order?.subscription?.name ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="max-w-[12rem] truncate">
+                                      {payment.order.subscription.name}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {payment.order.subscription.name}
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                "-"
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {moment(payment.order?.startDate).format(
+                                "Do MMM YYYY"
+                              ) ?? "-"}
+                            </TableCell>
+                            <TableCell>
+                              {moment(payment.order?.endDate).format(
+                                "Do MMM YYYY"
+                              ) ?? "-"}
                             </TableCell>
                           </TableRow>
                         ))

@@ -36,17 +36,17 @@ const App = () => {
       if (user.role === "Admin") return "/dashboard";
 
       const orderedRoutes: { permission: string; path: string }[] = [
-        { permission: "dashboard.edit", path: "/dashboard" },
-        { permission: "client.edit", path: "/clients" },
-        { permission: "payment.edit", path: "/payments" },
-        { permission: "banner.edit", path: "/banner" },
-        { permission: "subscription.edit", path: "/subscriptions" },
-        { permission: "login_history.edit", path: "/login-history" },
-        { permission: "mca.edit", path: "/data/mca" },
-        { permission: "gst.edit", path: "/data/gst" },
-        { permission: "import_export.edit", path: "/data/import-export" },
-        { permission: "user_roles.edit", path: "/users-roles" },
-        { permission: "import_data.edit", path: "/import-data" },
+        { permission: "dashboard.view", path: "/dashboard" },
+        { permission: "client.view", path: "/clients" },
+        { permission: "payment.view", path: "/payments" },
+        { permission: "banner.view", path: "/banner" },
+        { permission: "subscription.view", path: "/subscriptions" },
+        { permission: "login_history.view", path: "/login-history" },
+        { permission: "mca.view", path: "/data/mca" },
+        { permission: "gst.view", path: "/data/gst" },
+        { permission: "import_export.view", path: "/data/import-export" },
+        { permission: "user_roles.view", path: "/users-roles" },
+        { permission: "import_data.view", path: "/import-data" },
       ];
 
       const permissions: string[] = user.permissions ?? [];
@@ -99,7 +99,7 @@ const App = () => {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute permission="dashboard.edit">
+            <ProtectedRoute permission="dashboard.view">
               <AdminLayout>
                 <Dashboard />
               </AdminLayout>
@@ -109,7 +109,7 @@ const App = () => {
         <Route
           path="/clients"
           element={
-            <ProtectedRoute permission="client.edit">
+            <ProtectedRoute permission="client.view">
               <AdminLayout>
                 <Clients />
               </AdminLayout>
@@ -119,7 +119,7 @@ const App = () => {
         <Route
           path="/clients/:id"
           element={
-            <ProtectedRoute permission="client.edit">
+            <ProtectedRoute permission="client.view">
               <AdminLayout>
                 <ClientDetails />
               </AdminLayout>
@@ -129,7 +129,7 @@ const App = () => {
         <Route
           path="/payments"
           element={
-            <ProtectedRoute permission="payment.edit">
+            <ProtectedRoute permission="payment.view">
               <AdminLayout>
                 <Payments />
               </AdminLayout>
@@ -139,7 +139,7 @@ const App = () => {
         <Route
           path="/banner"
           element={
-            <ProtectedRoute permission="banner.edit">
+            <ProtectedRoute permission="banner.view">
               <AdminLayout>
                 <Banner />
               </AdminLayout>
@@ -149,7 +149,7 @@ const App = () => {
         <Route
           path="/subscriptions"
           element={
-            <ProtectedRoute permission="subscription.edit">
+            <ProtectedRoute permission="subscription.view">
               <AdminLayout>
                 <Subscriptions />
               </AdminLayout>
@@ -159,7 +159,7 @@ const App = () => {
         <Route
           path="/login-history"
           element={
-            <ProtectedRoute permission="login_history.edit">
+            <ProtectedRoute permission="login_history.view">
               <AdminLayout>
                 <LoginHistory />
               </AdminLayout>
@@ -169,7 +169,7 @@ const App = () => {
         <Route
           path="/data/mca"
           element={
-            <ProtectedRoute permission="mca.edit">
+            <ProtectedRoute permission="mca.view">
               <AdminLayout>
                 <MCAManagement />
               </AdminLayout>
@@ -179,7 +179,7 @@ const App = () => {
         <Route
           path="/data/gst"
           element={
-            <ProtectedRoute permission="gst.edit">
+            <ProtectedRoute permission="gst.view">
               <AdminLayout>
                 <GSTManagement />
               </AdminLayout>
@@ -189,7 +189,7 @@ const App = () => {
         <Route
           path="/data/import-export"
           element={
-            <ProtectedRoute permission="import_export.edit">
+            <ProtectedRoute permission="import_export.view">
               <AdminLayout>
                 <ImportExportManagement />
               </AdminLayout>
@@ -199,7 +199,7 @@ const App = () => {
         <Route
           path="/users-roles"
           element={
-            <ProtectedRoute permission="user_roles.edit">
+            <ProtectedRoute permission="user_roles.view">
               <AdminLayout>
                 <UsersRoles />
               </AdminLayout>
@@ -209,7 +209,7 @@ const App = () => {
         <Route
           path="/import-data"
           element={
-            <ProtectedRoute permission="import_data.edit">
+            <ProtectedRoute permission="import_data.view">
               <AdminLayout>
                 <ImportData />
               </AdminLayout>

@@ -46,32 +46,32 @@ const mainItems = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
-    permission: "dashboard.edit",
+    permission: "dashboard.view",
   },
-  { title: "Clients", url: "/clients", icon: Users, permission: "client.edit" },
+  { title: "Clients", url: "/clients", icon: Users, permission: "client.view" },
   {
     title: "Payments",
     url: "/payments",
     icon: CreditCard,
-    permission: "payment.edit",
+    permission: "payment.view",
   },
   {
     title: "Subscriptions",
     url: "/subscriptions",
     icon: BadgeDollarSign,
-    permission: "subscription.edit",
+    permission: "subscription.view",
   },
   {
     title: "Banner",
     url: "/banner",
     icon: Bookmark,
-    permission: "banner.edit",
+    permission: "banner.view",
   },
   {
     title: "Login History",
     url: "/login-history",
     icon: History,
-    permission: "login_history.edit",
+    permission: "login_history.view",
   },
 ];
 
@@ -80,19 +80,19 @@ const dataManagementItems = [
     title: "MCA Management",
     url: "/data/mca",
     icon: Building2,
-    permission: "mca.edit",
+    permission: "mca.view",
   },
   {
     title: "GST Management",
     url: "/data/gst",
     icon: FileText,
-    permission: "gst.edit",
+    permission: "gst.view",
   },
   {
     title: "Import/Export",
     url: "/data/import-export",
     icon: Plane,
-    permission: "import_export.edit",
+    permission: "import_export.view",
   },
 ];
 
@@ -101,13 +101,13 @@ const systemItems = [
     title: "User & Roles",
     url: "/users-roles",
     icon: UserCheck,
-    permission: "user_roles.edit",
+    permission: "user_roles.view",
   },
   {
     title: "Import Data",
     url: "/import-data",
     icon: Upload,
-    permission: "import_data.edit",
+    permission: "import_data.view",
   },
 ];
 

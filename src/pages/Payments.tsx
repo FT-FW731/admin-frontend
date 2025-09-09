@@ -81,6 +81,20 @@ const Payments = () => {
 
   const [chartRange, setChartRange] = useState<"6m" | "1y" | "2y">("6m");
 
+  const formatAxis = (value: number) => {
+    try {
+      return (
+        "₹" +
+        new Intl.NumberFormat("en-IN", {
+          notation: "compact",
+          maximumFractionDigits: 1,
+        }).format(value)
+      );
+    } catch (e) {
+      return "₹" + value;
+    }
+  };
+
   useEffect(() => {
     const handler = debounce(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -153,7 +167,7 @@ const Payments = () => {
       </div>
 
       {/* Stats Cards */}
-      {isLoadingStats && !cardStats ? (
+      {isLoadingStats && !cardStats?.totalCollections ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <CardSkeleton count={4} />
         </div>
@@ -283,7 +297,10 @@ const Payments = () => {
               <LineChart data={monthWisePayments}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="month" className="text-muted-foreground" />
-                <YAxis className="text-muted-foreground" />
+                <YAxis
+                  className="text-muted-foreground"
+                  tickFormatter={formatAxis}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
