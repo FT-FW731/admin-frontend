@@ -41,6 +41,11 @@ import TableSkeleton from "@/components/TableSkeleton";
 import { debounce, formatNumber } from "@/utils/helpers";
 import CardSkeleton from "@/components/CardSkeleton";
 import { generateAndDownloadInvoicePDF } from "@/utils/invoicePDF";
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const paymentData = [
   { month: "Jan", amount: 85000 },
@@ -80,6 +85,9 @@ const Payments = () => {
   });
 
   const [chartRange, setChartRange] = useState<"6m" | "1y" | "2y">("6m");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "completed" | "failed" | "created"
+  >("all");
 
   const formatAxis = (value: number) => {
     try {
@@ -105,8 +113,11 @@ const Payments = () => {
     };
   }, [searchTerm]);
 
+  const statusQuery =
+    statusFilter && statusFilter !== "all" ? `&status=${statusFilter}` : "";
+
   const { data, isLoading } = useGetData(
-    `/miscellaneous/payments?page=${pagination.currentPage}&limit=${pagination.limit}&search=${debouncedSearchTerm}`
+    `/miscellaneous/payments?page=${pagination.currentPage}&limit=${pagination.limit}&search=${debouncedSearchTerm}${statusQuery}`
   );
 
   const { data: statsData, isLoading: isLoadingStats } = useGetData(
@@ -134,15 +145,19 @@ const Payments = () => {
   }, [statsData]);
 
   // fallback client-side filtering (keeps search responsive while server is used)
-  const filteredPayments = payments.filter(
-    (p) =>
+  const filteredPayments = payments.filter((p) => {
+    const matchesSearch =
       (p.client || "")
         .toLowerCase()
         .includes(debouncedSearchTerm.toLowerCase()) ||
       (p.razorpayOrderId || "")
         .toLowerCase()
-        .includes(debouncedSearchTerm.toLowerCase())
-  );
+        .includes(debouncedSearchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -350,6 +365,21 @@ const Payments = () => {
                 className="pl-8"
               />
             </div>
+            <div className="flex items-center space-x-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as any);
+                  setPagination((prev) => ({ ...prev, currentPage: 1 }));
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="all">All</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+                <option value="created">Created</option>
+              </select>
+            </div>
           </div>
 
           {/* Pagination Controls */}
@@ -408,16 +438,19 @@ const Payments = () => {
                   <TableHead>Amount</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Subscription</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>End Date</TableHead>
                   <TableHead>Invoice</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading && filteredPayments.length === 0 ? (
-                  <TableSkeleton columns={6} rows={10} />
+                  <TableSkeleton columns={8} rows={10} />
                 ) : filteredPayments.length === 0 && !isLoading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className="text-center text-muted-foreground"
                     >
                       No payments found.
@@ -440,15 +473,60 @@ const Payments = () => {
                         {new Date(payment.createdAt).toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            payment.status === "completed"
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {payment.status}
-                        </Badge>
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`inline-block h-2 w-2 rounded-full mr-1 ${
+                              payment.status === "completed"
+                                ? "bg-emerald-400"
+                                : payment.status === "failed"
+                                ? "bg-red-400"
+                                : payment.status === "created"
+                                ? "bg-sky-400"
+                                : "bg-gray-400"
+                            }`}
+                            aria-hidden="true"
+                          />
+                          <Badge
+                            variant={
+                              payment.status === "completed"
+                                ? "default"
+                                : payment.status === "failed"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                            className="uppercase text-xs py-0.5 px-2"
+                          >
+                            {String(payment.status)
+                              .replace(/_/g, " ")
+                              .toUpperCase()}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {payment.subscription?.name ? (
+                          <UITooltip>
+                            <TooltipTrigger asChild>
+                              <div className="max-w-[12rem] truncate">
+                                {payment.subscription?.name}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {payment.subscription?.name}
+                            </TooltipContent>
+                          </UITooltip>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {payment.startDate
+                          ? moment(payment.startDate).format("Do MMM YYYY")
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {payment.endDate
+                          ? moment(payment.endDate).format("Do MMM YYYY")
+                          : "-"}
                       </TableCell>
                       <TableCell>
                         {/* <code className="text-xs bg-muted px-1 py-0.5 rounded">
