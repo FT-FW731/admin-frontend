@@ -474,32 +474,43 @@ const Payments = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <span
-                            className={`inline-block h-2 w-2 rounded-full mr-1 ${
-                              payment.status === "completed"
+                          {(() => {
+                            const status = payment.status;
+                            const dotClass =
+                              status === "completed"
                                 ? "bg-emerald-400"
-                                : payment.status === "failed"
+                                : status === "failed"
                                 ? "bg-red-400"
-                                : payment.status === "created"
+                                : status === "created"
                                 ? "bg-sky-400"
-                                : "bg-gray-400"
-                            }`}
-                            aria-hidden="true"
-                          />
-                          <Badge
-                            variant={
-                              payment.status === "completed"
-                                ? "default"
-                                : payment.status === "failed"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                            className="uppercase text-xs py-0.5 px-2"
-                          >
-                            {String(payment.status)
-                              .replace(/_/g, " ")
-                              .toUpperCase()}
-                          </Badge>
+                                : "bg-gray-400";
+
+                            const badgeClass =
+                              status === "completed"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                : status === "failed"
+                                ? "bg-red-50 text-red-700 border border-red-100"
+                                : status === "created"
+                                ? "bg-sky-50 text-sky-700 border border-sky-100"
+                                : "bg-gray-50 text-gray-700 border border-gray-100";
+
+                            return (
+                              <>
+                                <span
+                                  className={`inline-block h-2 w-2 rounded-full mr-1 ${dotClass}`}
+                                  aria-hidden="true"
+                                />
+                                <Badge
+                                  variant="default"
+                                  className={`uppercase text-xs py-0.5 px-2 w-28 justify-center ${badgeClass}`}
+                                >
+                                  {String(payment.status)
+                                    .replace(/_/g, " ")
+                                    .toUpperCase()}
+                                </Badge>
+                              </>
+                            );
+                          })()}
                         </div>
                       </TableCell>
                       <TableCell>
