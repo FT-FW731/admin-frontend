@@ -18,6 +18,7 @@ import {
   Bookmark,
   BadgeDollarSign,
   LogOut,
+  Percent,
 } from "lucide-react";
 
 import {
@@ -60,6 +61,12 @@ const mainItems = [
     url: "/subscriptions",
     icon: BadgeDollarSign,
     permission: "subscription.view",
+  },
+  {
+    title: "Promocode",
+    url: "/promocode",
+    icon: Percent,
+    permission: "promocode.view",
   },
   {
     title: "Banner",

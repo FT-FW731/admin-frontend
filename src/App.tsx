@@ -24,6 +24,7 @@ import NotAuthorized from "./pages/NotAuthorized";
 import Subscriptions from "./pages/Subscriptions";
 import NotFound from "./pages/NotFound";
 import Banner from "./pages/Banner";
+import Promocode from "./pages/Promocode";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => {
 
       const orderedRoutes: { permission: string; path: string }[] = [
         { permission: "dashboard.view", path: "/dashboard" },
+        { permission: "promocode.view", path: "/promocode" },
         { permission: "client.view", path: "/clients" },
         { permission: "payment.view", path: "/payments" },
         { permission: "banner.view", path: "/banner" },
@@ -102,6 +104,16 @@ const App = () => {
             <ProtectedRoute permission="dashboard.view">
               <AdminLayout>
                 <Dashboard />
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/promocode"
+          element={
+            <ProtectedRoute permission="promocode.view">
+              <AdminLayout>
+                <Promocode />
               </AdminLayout>
             </ProtectedRoute>
           }
