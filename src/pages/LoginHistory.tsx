@@ -1,89 +1,88 @@
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { 
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { 
-  History, 
-  Search, 
-  Shield, 
+} from "@/components/ui/table";
+import {
+  History,
+  Search,
+  Shield,
   Clock,
   MapPin,
-  Monitor
-} from "lucide-react"
-
-const mockLoginHistory = [
-  {
-    id: "LOG001",
-    user: "admin@acme.com",
-    role: "Client",
-    ip: "192.168.1.100",
-    location: "Mumbai, India",
-    device: "Chrome on Windows",
-    timestamp: "2024-01-18 14:30:25",
-    status: "Success"
-  },
-  {
-    id: "LOG002", 
-    user: "super.admin@panel.com",
-    role: "Super Admin",
-    ip: "10.0.0.1",
-    location: "Delhi, India",
-    device: "Firefox on Mac",
-    timestamp: "2024-01-18 12:15:10",
-    status: "Success"
-  },
-  {
-    id: "LOG003",
-    user: "contact@techstart.com", 
-    role: "Client",
-    ip: "203.192.1.50",
-    location: "Bangalore, India",
-    device: "Safari on iOS",
-    timestamp: "2024-01-18 09:45:33",
-    status: "Failed"
-  },
-  {
-    id: "LOG004",
-    user: "admin@panel.com",
-    role: "Admin",
-    ip: "172.16.0.10",
-    location: "Pune, India", 
-    device: "Chrome on Android",
-    timestamp: "2024-01-18 08:20:15",
-    status: "Success"
-  },
-  {
-    id: "LOG005",
-    user: "info@global.com",
-    role: "Client",
-    ip: "192.168.2.45",
-    location: "Chennai, India",
-    device: "Edge on Windows",
-    timestamp: "2024-01-17 16:55:42",
-    status: "Success"
-  }
-]
+  Monitor,
+  Mail,
+} from "lucide-react";
+import useGetData from "@/hooks/use-get-data";
+import moment from "moment";
+import TableSkeleton from "@/components/TableSkeleton";
+import CardSkeleton from "@/components/CardSkeleton";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 const LoginHistory = () => {
-  const [searchTerm, setSearchTerm] = useState("")
+  // pagination state (added)
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    limit: 10,
+    hasNextPage: false,
+    hasPreviousPage: false,
+    nextPage: null as number | null,
+    previousPage: null as number | null,
+  });
 
-  const filteredHistory = mockLoginHistory.filter(log =>
-    log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.ip.includes(searchTerm) ||
-    log.location.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
-  const successLogins = mockLoginHistory.filter(log => log.status === "Success").length
-  const failedLogins = mockLoginHistory.filter(log => log.status === "Failed").length
-  const uniqueUsers = new Set(mockLoginHistory.map(log => log.user)).size
+  // Debounce searchTerm updates
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400); // 400ms debounce
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  // useGetData uses debouncedSearchTerm
+  const { data, isLoading, refetch } = useGetData(
+    `/clients/login-history?page=${pagination.currentPage}&limit=${
+      pagination.limit
+    }&search=${encodeURIComponent(debouncedSearchTerm)}`
+  );
+  const cards = data?.cards;
+
+  useEffect(() => {
+    // API returns records and pagination (if paginated). Map them into state.
+    if (data?.pagination) {
+      setPagination((prev) => ({
+        ...prev,
+        currentPage: data.pagination.currentPage ?? prev.currentPage,
+        totalPages: data.pagination.totalPages ?? prev.totalPages,
+        totalCount: data.pagination.totalCount ?? prev.totalCount,
+        limit: data.pagination.limit ?? prev.limit,
+        hasNextPage: !!data.pagination.hasNextPage,
+        hasPreviousPage: !!data.pagination.hasPreviousPage,
+        nextPage: data.pagination.nextPage ?? null,
+        previousPage: data.pagination.previousPage ?? null,
+      }));
+    }
+  }, [data]);
 
   return (
     <div className="p-6 space-y-6">
@@ -91,7 +90,9 @@ const LoginHistory = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Login History</h1>
-          <p className="text-muted-foreground">Monitor user access and security events</p>
+          <p className="text-muted-foreground">
+            Monitor user access and security events
+          </p>
         </div>
         <Badge variant="outline" className="px-3 py-1">
           <History className="w-3 h-3 mr-1" />
@@ -100,56 +101,74 @@ const LoginHistory = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">Total Logins</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Total Logins
+            </CardTitle>
             <History className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">{mockLoginHistory.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Last 24 hours
-            </p>
+            <div className="text-2xl font-bold text-card-foreground">
+              {cards?.totalLogins}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">Successful</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Total Clients
+            </CardTitle>
             <Shield className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">{successLogins}</div>
-            <p className="text-xs text-muted-foreground">
-              {Math.round((successLogins / mockLoginHistory.length) * 100)}% success rate
-            </p>
+            <div className="text-2xl font-bold text-card-foreground">
+              {cards?.totalClients}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">Failed Attempts</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Total Sub Users
+            </CardTitle>
             <Shield className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">{failedLogins}</div>
-            <p className="text-xs text-muted-foreground">
-              Security alerts
-            </p>
+            <div className="text-2xl font-bold text-card-foreground">
+              {cards?.totalSubUsers}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-card-foreground">Unique Users</CardTitle>
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Total Users
+            </CardTitle>
             <Monitor className="h-4 w-4 text-chart-3" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">{uniqueUsers}</div>
-            <p className="text-xs text-muted-foreground">
-              Active today
-            </p>
+            <div className="text-2xl font-bold text-card-foreground">
+              {cards?.totalUsers}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Unique Users
+            </CardTitle>
+            <Monitor className="h-4 w-4 text-chart-3" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-card-foreground">
+              {cards?.uniqueUsers}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -157,8 +176,12 @@ const LoginHistory = () => {
       {/* Login History Table */}
       <Card className="shadow-card border-0 bg-card/50 backdrop-blur">
         <CardHeader>
-          <CardTitle className="text-card-foreground">Recent Login Activity</CardTitle>
-          <CardDescription>Track user access patterns and security events</CardDescription>
+          <CardTitle className="text-card-foreground">
+            Recent Login Activity
+          </CardTitle>
+          <CardDescription>
+            Track user access patterns and security events
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-2 mb-4">
@@ -167,77 +190,130 @@ const LoginHistory = () => {
               <Input
                 placeholder="Search by user, IP, or location..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPagination((prev) => ({
+                    ...prev,
+                    currentPage: 1,
+                  }));
+                }}
                 className="pl-8"
               />
             </div>
           </div>
 
+          {/* Pagination controls (updated) */}
+          <div className="flex justify-end items-center mb-4 space-x-2">
+            <Button
+              variant="outline"
+              disabled={!pagination.hasPreviousPage}
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  currentPage: prev.previousPage ?? prev.currentPage,
+                }))
+              }
+            >
+              Prev
+            </Button>
+            <span className="text-sm">
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              disabled={!pagination.hasNextPage}
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  currentPage: prev.nextPage ?? prev.currentPage,
+                }))
+              }
+            >
+              Next
+            </Button>
+            <Label htmlFor="limit" className="ml-4 mr-2 text-sm">
+              Rows:
+            </Label>
+            <select
+              id="limit"
+              value={pagination.limit}
+              onChange={(e) => {
+                setPagination((prev) => ({
+                  ...prev,
+                  limit: Number(e.target.value),
+                  currentPage: 1,
+                }));
+              }}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+            </select>
+          </div>
           <div className="rounded-md border border-border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
+                  <TableHead>Name</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>IP Address</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Device</TableHead>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Login At</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredHistory.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell>
-                      <div className="font-medium">{log.user}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        log.role === "Super Admin" ? "default" : 
-                        log.role === "Admin" ? "secondary" : 
-                        "outline"
-                      }>
-                        {log.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                        {log.ip}
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <MapPin className="w-3 h-3 mr-1 text-muted-foreground" />
-                        {log.location}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <Monitor className="w-3 h-3 mr-1 text-muted-foreground" />
-                        {log.device}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <Clock className="w-3 h-3 mr-1 text-muted-foreground" />
-                        {log.timestamp}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={log.status === "Success" ? "default" : "destructive"}>
-                        {log.status}
-                      </Badge>
+                {isLoading ? (
+                  <TableSkeleton />
+                ) : data?.logins?.length <= 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-muted-foreground"
+                    >
+                      No login history found.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  data?.logins?.map((log: any) => (
+                    <TableRow key={log.id}>
+                      <TableCell>
+                        <div className="font-medium">{log.name}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            log.role === "Super Admin"
+                              ? "default"
+                              : log.role === "Admin"
+                              ? "secondary"
+                              : "outline"
+                          }
+                        >
+                          {log.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Mail className="w-3 h-3 mr-1 text-muted-foreground" />
+                          {log.email}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Clock className="w-3 h-3 mr-1 text-muted-foreground" />
+                          {moment(log.loginAt).format("DD MMM YYYY, hh:mm A")}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default LoginHistory
+export default LoginHistory;
